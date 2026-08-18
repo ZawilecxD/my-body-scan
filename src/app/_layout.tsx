@@ -1,18 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { SQLiteProvider, type SQLiteDatabase } from 'expo-sqlite';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { migrate } from '@/db/migrate';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+async function onInit(db: SQLiteDatabase) {
+  await migrate(db);
+  await SplashScreen.hideAsync();
+}
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+      <SQLiteProvider databaseName="my-body-scan.db" onInit={onInit}>
+        <Stack />
+      </SQLiteProvider>
     </ThemeProvider>
   );
 }

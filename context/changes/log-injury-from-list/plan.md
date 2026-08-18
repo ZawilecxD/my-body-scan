@@ -181,13 +181,13 @@ No test runner this slice (explicit). Automated gate is `npx tsc --noEmit` only.
 
 #### Automated
 
-- [ ] 3.1 `npx tsc --noEmit` passes
+- [x] 3.1 `npx tsc --noEmit` passes
 
 #### Manual
 
-- [ ] 3.2 Empty home list and Log injury action; template gone
-- [ ] 3.3 Catalog grouped by region with Name · side rows
-- [ ] 3.4 Description required; save opens detail
-- [ ] 3.5 Back from detail lands on home list under the right region
-- [ ] 3.6 Two open injuries on the same landmark both appear
-- [ ] 3.7 Force-stop and reopen still shows both injuries
+- [x] 3.2 Empty home list and Log injury action; template gone
+- [x] 3.3 Catalog grouped by region with Name · side rows
+- [x] 3.4 Description required; save opens detail
+- [x] 3.5 Back from detail lands on home list under the right region
+- [x] 3.6 Two open injuries on the same landmark both appear
+- [x] 3.7 Force-stop and reopen still shows both injuries
