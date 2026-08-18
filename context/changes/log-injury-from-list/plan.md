@@ -171,11 +171,11 @@ No test runner this slice (explicit). Automated gate is `npx tsc --noEmit` only.
 
 #### Automated
 
-- [x] 2.1 `npx tsc --noEmit` passes
+- [x] 2.1 `npx tsc --noEmit` passes — 20cf086
 
 #### Manual
 
-- [x] 2.2 Injury store modules match the plan contracts
+- [x] 2.2 Injury store modules match the plan contracts — 20cf086
 
 ### Phase 3: Stack shell and product screens
 
