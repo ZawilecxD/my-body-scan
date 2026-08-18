@@ -161,21 +161,21 @@ No test runner this slice (explicit). Automated gate is `npx tsc --noEmit` only.
 
 #### Automated
 
-- [x] 1.1 `npx tsc --noEmit` passes
+- [x] 1.1 `npx tsc --noEmit` passes — d57a3c1
 
 #### Manual
 
-- [x] 1.2 Catalog matches PRD §5 exactly
+- [x] 1.2 Catalog matches PRD §5 exactly — d57a3c1
 
 ### Phase 2: SQLite injury store
 
 #### Automated
 
-- [ ] 2.1 `npx tsc --noEmit` passes
+- [x] 2.1 `npx tsc --noEmit` passes
 
 #### Manual
 
-- [ ] 2.2 Injury store modules match the plan contracts
+- [x] 2.2 Injury store modules match the plan contracts
 
 ### Phase 3: Stack shell and product screens
 
