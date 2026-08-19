@@ -9,18 +9,21 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
     return;
   }
 
+  // WAL cannot run inside a transaction.
+  await db.execAsync(`PRAGMA journal_mode = 'wal'`);
+
   if (currentDbVersion === 0) {
-    await db.execAsync(`
-PRAGMA journal_mode = 'wal';
-CREATE TABLE injuries (
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+CREATE TABLE IF NOT EXISTS injuries (
   id INTEGER PRIMARY KEY NOT NULL,
   landmark_id TEXT NOT NULL,
   description TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL
 );
+PRAGMA user_version = ${DATABASE_VERSION};
 `);
+    });
   }
-
-  await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
 }
