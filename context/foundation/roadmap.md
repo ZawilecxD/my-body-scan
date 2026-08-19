@@ -20,7 +20,7 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Outcome:** User can pick a landmark from a list grouped by region, create an injury with a required description, and see it again after force-stop.
 - **Layers:** landmark catalog, sqlite (injury), Expo Router list + create screens
 - **PRD:** G1, J2 (list), FR-6, FR-9, FR-10 (description), FR-18, FR-19, FR-20
-- **Status:** ready
+- **Status:** done
 - **Next:** `/11x-new log-injury-from-list grouped list + sqlite persist for an injury on one landmark`
 
 ### 2. Log and browse from the body graphic
@@ -62,3 +62,5 @@ From PRD non-goals — do not pull into a slice:
 Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen) is in slice 4.
 
 ## Done
+
+- 2026-08-19 — `log-injury-from-list` → `context/archive/2026-08-17-log-injury-from-list/`

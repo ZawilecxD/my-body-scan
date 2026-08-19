@@ -2,10 +2,10 @@
 change_id: log-injury-from-list
 title: Log an injury from the grouped list
 type: feature
-status: impl_reviewed
+status: archived
 created: 2026-08-17
-updated: 2026-08-18
-archived_at: null
+updated: 2026-08-19
+archived_at: 2026-08-19T18:30:47Z
 ---
 
 ## Notes
