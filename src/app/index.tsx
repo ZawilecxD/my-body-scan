@@ -3,16 +3,23 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { BodyOverviewMap } from '@/components/body-overview-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
-import { getLandmarkById, REGION_ORDER, type Region } from '@/domain/landmarks';
+import { getLandmarkById, REGION_ORDER, type Region, type Side } from '@/domain/landmarks';
+import { useTheme } from '@/hooks/use-theme';
+
+type HomeView = 'graphic' | 'list';
 
 export default function OpenInjuriesScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const theme = useTheme();
+  const [view, setView] = useState<HomeView>('graphic');
+  const [side, setSide] = useState<Side>('front');
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +46,7 @@ export default function OpenInjuriesScreen() {
     }, [db]),
   );
 
+  const openLandmarkIds = new Set((injuries ?? []).map((injury) => injury.landmarkId));
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
 
   return (
@@ -58,7 +66,55 @@ export default function OpenInjuriesScreen() {
         }}
       />
       <ThemedView style={styles.screen}>
-        {error != null ? (
+        <ThemedView style={styles.segments}>
+          <SegmentButton
+            label="Graphic"
+            selected={view === 'graphic'}
+            onPress={() => setView('graphic')}
+            selectedBackground={theme.backgroundSelected}
+          />
+          <SegmentButton
+            label="List"
+            selected={view === 'list'}
+            onPress={() => setView('list')}
+            selectedBackground={theme.backgroundSelected}
+          />
+        </ThemedView>
+
+        {view === 'graphic' ? (
+          <>
+            <ThemedView style={styles.segments}>
+              <SegmentButton
+                label="Front"
+                selected={side === 'front'}
+                onPress={() => setSide('front')}
+                selectedBackground={theme.backgroundSelected}
+              />
+              <SegmentButton
+                label="Back"
+                selected={side === 'back'}
+                onPress={() => setSide('back')}
+                selectedBackground={theme.backgroundSelected}
+              />
+            </ThemedView>
+            {error != null ? (
+              <ThemedText>{error}</ThemedText>
+            ) : (
+              <ThemedView style={styles.mapFrame}>
+                <BodyOverviewMap
+                  side={side}
+                  openLandmarkIds={openLandmarkIds}
+                  onRegionPress={(region) =>
+                    router.push({
+                      pathname: '/map/[region]',
+                      params: { region, side },
+                    })
+                  }
+                />
+              </ThemedView>
+            )}
+          </>
+        ) : error != null ? (
           <ThemedText>{error}</ThemedText>
         ) : injuries == null ? null : injuries.length === 0 ? (
           <ThemedView style={styles.empty}>
@@ -108,6 +164,32 @@ export default function OpenInjuriesScreen() {
   );
 }
 
+function SegmentButton({
+  label,
+  selected,
+  onPress,
+  selectedBackground,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  selectedBackground: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.segment,
+        selected && { backgroundColor: selectedBackground },
+        pressed && styles.pressed,
+      ]}>
+      <ThemedText type="smallBold">{label}</ThemedText>
+    </Pressable>
+  );
+}
+
 function groupInjuriesByRegion(injuries: Injury[]): { region: Region; items: Injury[] }[] {
   return REGION_ORDER.flatMap((region) => {
     const items = injuries.filter((injury) => getLandmarkById(injury.landmarkId)?.region === region);
@@ -123,6 +205,21 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  segments: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.three,
+  },
+  mapFrame: {
+    flex: 1,
+    minHeight: 320,
   },
   list: {
     gap: Spacing.three,
