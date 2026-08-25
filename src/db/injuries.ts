@@ -50,6 +50,22 @@ export async function listOpenInjuries(db: SQLiteDatabase): Promise<Injury[]> {
   return rows.map(mapInjury);
 }
 
+export async function listOpenInjuriesForLandmark(
+  db: SQLiteDatabase,
+  landmarkId: string,
+): Promise<Injury[]> {
+  if (getLandmarkById(landmarkId) == null) {
+    throw new Error(`Cannot list injuries: unknown landmark "${landmarkId}"`);
+  }
+
+  const rows = await db.getAllAsync<InjuryRow>(
+    'SELECT id, landmark_id, description, status, created_at FROM injuries WHERE status = ? AND landmark_id = ? ORDER BY created_at DESC',
+    'open',
+    landmarkId,
+  );
+  return rows.map(mapInjury);
+}
+
 export async function getInjuryById(db: SQLiteDatabase, id: number): Promise<Injury | null> {
   const row = await db.getFirstAsync<InjuryRow>(
     'SELECT id, landmark_id, description, status, created_at FROM injuries WHERE id = ?',
