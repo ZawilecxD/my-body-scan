@@ -1,10 +1,16 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { BodyCloseUpMap } from '@/components/body-close-up-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { listOpenInjuries, listOpenInjuriesForLandmark } from '@/db/injuries';
+import type { Injury } from '@/domain/injury';
 import { REGION_ORDER, type Region, type Side } from '@/domain/landmarks';
+import { useTheme } from '@/hooks/use-theme';
 
 function parseRegion(value: string | undefined): Region | null {
   if (value == null) {
@@ -34,6 +40,38 @@ export default function MapRegionScreen() {
   const region = parseRegion(regionValue);
   const side = parseSide(sideValue);
 
+  const db = useSQLiteContext();
+  const router = useRouter();
+  const theme = useTheme();
+  const [injuries, setInjuries] = useState<Injury[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (region == null || side == null) {
+        return;
+      }
+
+      let cancelled = false;
+      listOpenInjuries(db)
+        .then((rows) => {
+          if (!cancelled) {
+            setError(null);
+            setInjuries(rows);
+          }
+        })
+        .catch((caught: unknown) => {
+          if (!cancelled) {
+            setError(caught instanceof Error ? caught.message : 'Cannot load open injuries');
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }, [db, region, side]),
+  );
+
   if (region == null || side == null) {
     return (
       <>
@@ -49,13 +87,67 @@ export default function MapRegionScreen() {
     );
   }
 
+  const openLandmarkIds = new Set((injuries ?? []).map((injury) => injury.landmarkId));
+
+  async function onLandmarkPress(landmarkId: string) {
+    try {
+      const open = await listOpenInjuriesForLandmark(db, landmarkId);
+      if (open.length === 0) {
+        router.push({
+          pathname: '/injuries/new',
+          params: { landmarkId },
+        });
+        return;
+      }
+      router.push({
+        pathname: '/landmarks/[id]',
+        params: { id: landmarkId },
+      });
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : 'Cannot open landmark');
+    }
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: `${regionLabel(region)} · ${side}` }} />
       <ThemedView style={styles.screen}>
-        <ThemedText themeColor="textSecondary">
-          Close-up for {regionLabel(region)} · {side} will land in the next step.
-        </ThemedText>
+        <ThemedView style={styles.segments}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: side === 'front' }}
+            onPress={() => router.setParams({ side: 'front' })}
+            style={({ pressed }) => [
+              styles.segment,
+              side === 'front' && { backgroundColor: theme.backgroundSelected },
+              pressed && styles.pressed,
+            ]}>
+            <ThemedText type="smallBold">Front</ThemedText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: side === 'back' }}
+            onPress={() => router.setParams({ side: 'back' })}
+            style={({ pressed }) => [
+              styles.segment,
+              side === 'back' && { backgroundColor: theme.backgroundSelected },
+              pressed && styles.pressed,
+            ]}>
+            <ThemedText type="smallBold">Back</ThemedText>
+          </Pressable>
+        </ThemedView>
+        {error != null ? (
+          <ThemedText>{error}</ThemedText>
+        ) : (
+          <ThemedView style={styles.mapFrame}>
+            <BodyCloseUpMap
+              region={region}
+              side={side}
+              openLandmarkIds={openLandmarkIds}
+              onLandmarkPress={onLandmarkPress}
+            />
+          </ThemedView>
+        )}
       </ThemedView>
     </>
   );
@@ -65,6 +157,23 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  segments: {
+    flexDirection: 'row',
     gap: Spacing.two,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.three,
+  },
+  mapFrame: {
+    flex: 1,
+    minHeight: 280,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

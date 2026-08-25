@@ -189,7 +189,7 @@ No test runner this slice (same as slice 1). Automated gate is `npx tsc --noEmit
 
 #### Automated
 
-- [ ] 3.1 `npx tsc --noEmit` passes
+- [x] 3.1 `npx tsc --noEmit` passes — c740fcb
 
 #### Manual
 
