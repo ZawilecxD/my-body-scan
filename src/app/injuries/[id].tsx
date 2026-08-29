@@ -7,10 +7,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { createComment, listCommentsForInjury } from '@/db/comments';
+import { listEventsForInjury } from '@/db/events';
 import { archiveInjury, getInjuryById, reopenInjury } from '@/db/injuries';
-import { createSolution, listSolutionsForInjury } from '@/db/solutions';
+import {
+  createSolution,
+  getSolutionById,
+  listSolutionsForInjury,
+  removeSolution,
+} from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
-import type { Comment, Injury, Solution } from '@/domain/injury';
+import type { Comment, Injury, InjuryEvent, Solution } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -25,12 +31,15 @@ export default function InjuryDetailScreen() {
   const [injury, setInjury] = useState<Injury | null | undefined>(undefined);
   const [comments, setComments] = useState<Comment[]>([]);
   const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [events, setEvents] = useState<InjuryEvent[]>([]);
+  const [eventLabels, setEventLabels] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [solutionBody, setSolutionBody] = useState('');
   const [solutionUrl, setSolutionUrl] = useState('');
   const addingComment = useRef(false);
   const addingSolution = useRef(false);
+  const removingSolution = useRef(false);
   const statusAction = useRef(false);
 
   useEffect(() => {
@@ -55,6 +64,8 @@ export default function InjuryDetailScreen() {
         setInjury(loaded.injury);
         setComments(loaded.comments);
         setSolutions(loaded.solutions);
+        setEvents(loaded.events);
+        setEventLabels(loaded.eventLabels);
       })
       .catch((caught: unknown) => {
         if (!cancelled) {
@@ -72,6 +83,17 @@ export default function InjuryDetailScreen() {
   const trimmedComment = commentBody.trim();
   const trimmedSolution = solutionBody.trim();
   const isOpen = injury?.status === 'open';
+
+  async function reloadSolutionsAndEvents() {
+    const [nextSolutions, nextEvents] = await Promise.all([
+      listSolutionsForInjury(db, id),
+      listEventsForInjury(db, id),
+    ]);
+    const labels = await labelsForEvents(db, nextEvents);
+    setSolutions(nextSolutions);
+    setEvents(nextEvents);
+    setEventLabels(labels);
+  }
 
   async function onAddComment() {
     if (addingComment.current || trimmedComment.length === 0 || Number.isNaN(id) || !isOpen) {
@@ -98,8 +120,7 @@ export default function InjuryDetailScreen() {
     addingSolution.current = true;
     try {
       await createSolution(db, { injuryId: id, body: solutionBody, url: solutionUrl });
-      const next = await listSolutionsForInjury(db, id);
-      setSolutions(next);
+      await reloadSolutionsAndEvents();
       setSolutionBody('');
       setSolutionUrl('');
       setError(null);
@@ -107,6 +128,22 @@ export default function InjuryDetailScreen() {
       setError(caught instanceof Error ? caught.message : 'Cannot add solution');
     } finally {
       addingSolution.current = false;
+    }
+  }
+
+  async function onRemoveSolution(solutionId: number) {
+    if (removingSolution.current || Number.isNaN(id) || !isOpen) {
+      return;
+    }
+    removingSolution.current = true;
+    try {
+      await removeSolution(db, solutionId);
+      await reloadSolutionsAndEvents();
+      setError(null);
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : 'Cannot remove solution');
+    } finally {
+      removingSolution.current = false;
     }
   }
 
@@ -133,6 +170,10 @@ export default function InjuryDetailScreen() {
     try {
       const next = await reopenInjury(db, id);
       setInjury(next);
+      const nextEvents = await listEventsForInjury(db, id);
+      const labels = await labelsForEvents(db, nextEvents);
+      setEvents(nextEvents);
+      setEventLabels(labels);
       setError(null);
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : 'Cannot reopen injury');
@@ -212,6 +253,14 @@ export default function InjuryDetailScreen() {
                 <ThemedText type="small" themeColor="textSecondary">
                   {new Date(solution.createdAt).toLocaleString()}
                 </ThemedText>
+                {isOpen ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => onRemoveSolution(solution.id)}
+                    style={({ pressed }) => pressed && styles.pressed}>
+                    <ThemedText type="smallBold">Remove</ThemedText>
+                  </Pressable>
+                ) : null}
               </ThemedView>
             ))}
             {isOpen ? (
@@ -288,6 +337,16 @@ export default function InjuryDetailScreen() {
                 </Pressable>
               </>
             ) : null}
+
+            <ThemedText type="smallBold">History</ThemedText>
+            {events.map((event) => (
+              <ThemedView key={event.id} type="backgroundElement" style={styles.card}>
+                <ThemedText>{eventLabels[event.id] ?? eventTypeLabel(event.type)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {new Date(event.createdAt).toLocaleString()}
+                </ThemedText>
+              </ThemedView>
+            ))}
           </ScrollView>
         )}
       </ThemedView>
@@ -306,19 +365,63 @@ function SolutionLink({ url, onOpen }: { url: string; onOpen: (url: string) => v
   );
 }
 
+function eventTypeLabel(type: InjuryEvent['type']): string {
+  switch (type) {
+    case 'created':
+      return 'Created';
+    case 'archived':
+      return 'Archived';
+    case 'reopened':
+      return 'Reopened';
+    case 'solution_added':
+      return 'Solution added';
+    case 'solution_removed':
+      return 'Solution removed';
+  }
+}
+
+async function labelsForEvents(
+  db: SQLiteDatabase,
+  events: InjuryEvent[],
+): Promise<Record<number, string>> {
+  const labels: Record<number, string> = {};
+  for (const event of events) {
+    const base = eventTypeLabel(event.type);
+    if (
+      (event.type === 'solution_added' || event.type === 'solution_removed') &&
+      event.solutionId != null
+    ) {
+      const solution = await getSolutionById(db, event.solutionId);
+      labels[event.id] =
+        solution == null ? base : `${base}: ${solution.body.trim() || `#${event.solutionId}`}`;
+    } else {
+      labels[event.id] = base;
+    }
+  }
+  return labels;
+}
+
 async function loadThread(
   db: SQLiteDatabase,
   id: number,
-): Promise<{ injury: Injury | null; comments: Comment[]; solutions: Solution[] }> {
+): Promise<{
+  injury: Injury | null;
+  comments: Comment[];
+  solutions: Solution[];
+  events: InjuryEvent[];
+  eventLabels: Record<number, string>;
+}> {
   const injury = await getInjuryById(db, id);
   if (injury == null) {
-    return { injury: null, comments: [], solutions: [] };
+    return { injury: null, comments: [], solutions: [], events: [], eventLabels: {} };
   }
-  const [comments, solutions] = await Promise.all([
+  const [comments, solutions, events] = await Promise.all([
     listCommentsForInjury(db, id),
     listSolutionsForInjury(db, id),
+    listEventsForInjury(db, id),
   ]);
-  return { injury, comments, solutions };
+  const eventLabels = await labelsForEvents(db, events);
+  return { injury, comments, solutions, events, eventLabels };
 }
 
 function inputColors(theme: { text: string; backgroundElement: string }) {

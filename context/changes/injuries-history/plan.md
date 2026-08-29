@@ -181,8 +181,8 @@ Injury detail loads and shows History; open injuries can Remove a solution.
 
 #### Automated
 
-- [ ] 1.1 Schema v5, domain, events module, wire writers and solution filters
-- [ ] 1.2 `npx tsc --noEmit` exits 0
+- [x] 1.1 Schema v5, domain, events module, wire writers and solution filters — d91c12e
+- [x] 1.2 `npx tsc --noEmit` exits 0 — d91c12e
 
 #### Manual
 
