@@ -186,9 +186,9 @@ Severity section on injury detail: compose (open), list, SVG sparkline when ≥2
 
 #### Automated
 
-- [ ] 2.1 Severity section compose + list on injury detail
-- [ ] 2.2 SVG sparkline for ≥2 readings
-- [ ] 2.3 tsc --noEmit passes
+- [x] 2.1 Severity section compose + list on injury detail — cdceffd
+- [x] 2.2 SVG sparkline for ≥2 readings — cdceffd
+- [x] 2.3 tsc --noEmit passes — cdceffd
 
 #### Manual
 

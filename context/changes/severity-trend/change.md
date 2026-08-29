@@ -2,7 +2,7 @@
 change_id: severity-trend
 title: Severity readings over time on an injury
 type: feature
-status: implementing
+status: mr_ready
 created: 2026-08-29
 updated: 2026-08-29
 archived_at: null
