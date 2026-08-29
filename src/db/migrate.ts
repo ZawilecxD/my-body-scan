@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 5;
+export const DATABASE_VERSION = 6;
 
 const COMMENTS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
@@ -42,7 +42,17 @@ CREATE TABLE IF NOT EXISTS injury_events (
 );
 `;
 
-const V5_FROM_EXISTING = `
+const SEVERITY_READINGS_DDL = `
+CREATE TABLE IF NOT EXISTS severity_readings (
+  id INTEGER PRIMARY KEY NOT NULL,
+  injury_id INTEGER NOT NULL,
+  value INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+`;
+
+/** V5 shape only — no user_version stamp (plan-review C1). */
+const V5_SCHEMA_FROM_EXISTING = `
 ALTER TABLE solutions ADD COLUMN removed_at TEXT;
 ${INJURY_EVENTS_DDL}
 INSERT INTO injury_events (injury_id, type, solution_id, created_at)
@@ -52,6 +62,10 @@ INSERT INTO injury_events (injury_id, type, solution_id, created_at)
   WHERE status = 'archived' AND archived_at IS NOT NULL;
 INSERT INTO injury_events (injury_id, type, solution_id, created_at)
   SELECT injury_id, 'solution_added', id, created_at FROM solutions;
+`;
+
+const V6_FROM_V5 = `
+${SEVERITY_READINGS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `;
 
@@ -80,6 +94,7 @@ CREATE TABLE IF NOT EXISTS injuries (
 ${COMMENTS_DDL}
 ${SOLUTIONS_DDL_V5}
 ${INJURY_EVENTS_DDL}
+${SEVERITY_READINGS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
     });
@@ -93,7 +108,8 @@ ALTER TABLE injuries ADD COLUMN limb TEXT;
 ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${COMMENTS_DDL}
 ${SOLUTIONS_DDL_LEGACY}
-${V5_FROM_EXISTING}
+${V5_SCHEMA_FROM_EXISTING}
+${V6_FROM_V5}
 `);
     });
     return;
@@ -105,7 +121,8 @@ ${V5_FROM_EXISTING}
 ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${COMMENTS_DDL}
 ${SOLUTIONS_DDL_LEGACY}
-${V5_FROM_EXISTING}
+${V5_SCHEMA_FROM_EXISTING}
+${V6_FROM_V5}
 `);
     });
     return;
@@ -115,7 +132,8 @@ ${V5_FROM_EXISTING}
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
 ALTER TABLE injuries ADD COLUMN archived_at TEXT;
-${V5_FROM_EXISTING}
+${V5_SCHEMA_FROM_EXISTING}
+${V6_FROM_V5}
 `);
     });
     return;
@@ -123,7 +141,17 @@ ${V5_FROM_EXISTING}
 
   if (currentDbVersion === 4) {
     await db.withTransactionAsync(async () => {
-      await db.execAsync(V5_FROM_EXISTING);
+      await db.execAsync(`
+${V5_SCHEMA_FROM_EXISTING}
+${V6_FROM_V5}
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 5) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(V6_FROM_V5);
     });
   }
 }

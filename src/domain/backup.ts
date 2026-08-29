@@ -1,4 +1,4 @@
-import type { Comment, Injury, InjuryEvent, Solution } from '@/domain/injury';
+import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
 
 export type BackupPayload = {
   formatVersion: 1;
@@ -8,4 +8,5 @@ export type BackupPayload = {
   comments: Comment[];
   solutions: Solution[];
   events: InjuryEvent[];
+  readings: SeverityReading[];
 };

@@ -42,3 +42,10 @@ export type InjuryEvent = {
   solutionId: number | null;
   createdAt: string;
 };
+
+export type SeverityReading = {
+  id: number;
+  injuryId: number;
+  value: number;
+  createdAt: string;
+};

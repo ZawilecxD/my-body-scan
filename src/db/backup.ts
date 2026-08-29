@@ -8,6 +8,7 @@ import type {
   InjuryEvent,
   InjuryEventType,
   InjuryStatus,
+  SeverityReading,
   Solution,
 } from '@/domain/injury';
 import { getLandmarkById, type Limb } from '@/domain/landmarks';
@@ -46,6 +47,13 @@ type EventRow = {
   created_at: string;
 };
 
+type SeverityReadingRow = {
+  id: number;
+  injury_id: number;
+  value: number;
+  created_at: string;
+};
+
 export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
   const injuryRows = await db.getAllAsync<InjuryRow>(
     'SELECT id, landmark_id, description, status, created_at, archived_at, limb FROM injuries ORDER BY id ASC',
@@ -59,6 +67,9 @@ export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
   const eventRows = await db.getAllAsync<EventRow>(
     'SELECT id, injury_id, type, solution_id, created_at FROM injury_events ORDER BY id ASC',
   );
+  const readingRows = await db.getAllAsync<SeverityReadingRow>(
+    'SELECT id, injury_id, value, created_at FROM severity_readings ORDER BY id ASC',
+  );
 
   return {
     formatVersion: 1,
@@ -68,6 +79,7 @@ export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
     comments: commentRows.map(mapCommentRow),
     solutions: solutionRows.map(mapSolutionRow),
     events: eventRows.map(mapEventRow),
+    readings: readingRows.map(mapSeverityReadingRow),
   };
 }
 
@@ -108,11 +120,15 @@ export function parseBackupJson(text: string): BackupPayload {
   if (!Array.isArray(record.events)) {
     throw new Error('Cannot parse backup: events must be an array');
   }
+  if (!Array.isArray(record.readings)) {
+    throw new Error('Cannot parse backup: readings must be an array');
+  }
 
   const injuries = record.injuries.map((item, index) => parseInjury(item, index));
   const comments = record.comments.map((item, index) => parseComment(item, index));
   const solutions = record.solutions.map((item, index) => parseSolution(item, index));
   const events = record.events.map((item, index) => parseEvent(item, index));
+  const readings = record.readings.map((item, index) => parseReading(item, index));
 
   return {
     formatVersion: 1,
@@ -122,6 +138,7 @@ export function parseBackupJson(text: string): BackupPayload {
     comments,
     solutions,
     events,
+    readings,
   };
 }
 
@@ -136,6 +153,7 @@ export async function replaceFromBackup(
 DELETE FROM injury_events;
 DELETE FROM comments;
 DELETE FROM solutions;
+DELETE FROM severity_readings;
 DELETE FROM injuries;
 `);
 
@@ -182,6 +200,16 @@ DELETE FROM injuries;
         event.type,
         event.solutionId,
         event.createdAt,
+      );
+    }
+
+    for (const reading of payload.readings) {
+      await db.runAsync(
+        'INSERT INTO severity_readings (id, injury_id, value, created_at) VALUES (?, ?, ?, ?)',
+        reading.id,
+        reading.injuryId,
+        reading.value,
+        reading.createdAt,
       );
     }
   });
@@ -267,6 +295,23 @@ function parseEvent(value: unknown, index: number): InjuryEvent {
   };
 }
 
+function parseReading(value: unknown, index: number): SeverityReading {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Cannot parse backup: readings[${index}] must be an object`);
+  }
+  const row = value as Record<string, unknown>;
+  const readingValue = requireNumber(row.value, `readings[${index}].value`);
+  if (readingValue < 0 || readingValue > 10) {
+    throw new Error(`Cannot parse backup: readings[${index}].value must be an integer 0–10`);
+  }
+  return {
+    id: requireNumber(row.id, `readings[${index}].id`),
+    injuryId: requireNumber(row.injuryId, `readings[${index}].injuryId`),
+    value: readingValue,
+    createdAt: requireNonEmptyString(row.createdAt, `readings[${index}].createdAt`),
+  };
+}
+
 function mapInjuryRow(row: InjuryRow): Injury {
   return {
     id: row.id,
@@ -305,6 +350,15 @@ function mapEventRow(row: EventRow): InjuryEvent {
     injuryId: row.injury_id,
     type: parseEventType(row.type, `event ${row.id} type`),
     solutionId: row.solution_id,
+    createdAt: row.created_at,
+  };
+}
+
+function mapSeverityReadingRow(row: SeverityReadingRow): SeverityReading {
+  return {
+    id: row.id,
+    injuryId: row.injury_id,
+    value: row.value,
     createdAt: row.created_at,
   };
 }
