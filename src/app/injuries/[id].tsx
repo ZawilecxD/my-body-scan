@@ -1,14 +1,18 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
+import { useEffect, useRef, useState } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { createComment, listCommentsForInjury } from '@/db/comments';
 import { getInjuryById } from '@/db/injuries';
-import type { Injury } from '@/domain/injury';
+import { createSolution, listSolutionsForInjury } from '@/db/solutions';
+import { isHttpUrl } from '@/domain/http-url';
+import type { Comment, Injury, Solution } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function InjuryDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -16,8 +20,16 @@ export default function InjuryDetailScreen() {
   const id = idValue == null ? Number.NaN : Number(idValue);
 
   const db = useSQLiteContext();
+  const theme = useTheme();
   const [injury, setInjury] = useState<Injury | null | undefined>(undefined);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [solutions, setSolutions] = useState<Solution[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [commentBody, setCommentBody] = useState('');
+  const [solutionBody, setSolutionBody] = useState('');
+  const [solutionUrl, setSolutionUrl] = useState('');
+  const addingComment = useRef(false);
+  const addingSolution = useRef(false);
 
   useEffect(() => {
     if (Number.isNaN(id)) {
@@ -27,18 +39,20 @@ export default function InjuryDetailScreen() {
     }
 
     let cancelled = false;
-    getInjuryById(db, id)
-      .then((row) => {
+    loadThread(db, id)
+      .then((loaded) => {
         if (cancelled) {
           return;
         }
-        if (row == null) {
+        if (loaded.injury == null) {
           setInjury(null);
           setError(`Cannot open injury: not found (${id})`);
           return;
         }
         setError(null);
-        setInjury(row);
+        setInjury(loaded.injury);
+        setComments(loaded.comments);
+        setSolutions(loaded.solutions);
       })
       .catch((caught: unknown) => {
         if (!cancelled) {
@@ -53,15 +67,69 @@ export default function InjuryDetailScreen() {
   }, [db, id, idValue]);
 
   const landmark = injury == null ? undefined : getLandmarkById(injury.landmarkId);
+  const trimmedComment = commentBody.trim();
+  const trimmedSolution = solutionBody.trim();
+
+  async function onAddComment() {
+    if (addingComment.current || trimmedComment.length === 0 || Number.isNaN(id)) {
+      return;
+    }
+    addingComment.current = true;
+    try {
+      await createComment(db, { injuryId: id, body: commentBody });
+      const next = await listCommentsForInjury(db, id);
+      setComments(next);
+      setCommentBody('');
+      setError(null);
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : 'Cannot add comment');
+    } finally {
+      addingComment.current = false;
+    }
+  }
+
+  async function onAddSolution() {
+    if (addingSolution.current || trimmedSolution.length === 0 || Number.isNaN(id)) {
+      return;
+    }
+    addingSolution.current = true;
+    try {
+      await createSolution(db, { injuryId: id, body: solutionBody, url: solutionUrl });
+      const next = await listSolutionsForInjury(db, id);
+      setSolutions(next);
+      setSolutionBody('');
+      setSolutionUrl('');
+      setError(null);
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : 'Cannot add solution');
+    } finally {
+      addingSolution.current = false;
+    }
+  }
+
+  async function onOpenUrl(url: string) {
+    if (!isHttpUrl(url)) {
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : `Cannot open URL (${url})`);
+    }
+  }
 
   return (
     <>
       <Stack.Screen options={{ title: landmark?.name ?? 'Injury' }} />
       <ThemedView style={styles.screen}>
-        {injury === undefined ? null : error != null || injury == null ? (
+        {injury === undefined ? null : error != null && injury == null ? (
+          <ThemedText>{error}</ThemedText>
+        ) : injury == null ? (
           <ThemedText>{error ?? 'Cannot open injury.'}</ThemedText>
         ) : (
-          <>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scroll}>
             <ThemedText type="smallBold">
               {landmark == null ? injury.landmarkId : formatLandmarkLabel(landmark, injury.limb)}
             </ThemedText>
@@ -69,17 +137,154 @@ export default function InjuryDetailScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               {new Date(injury.createdAt).toLocaleString()}
             </ThemedText>
-          </>
+            {error != null ? <ThemedText>{error}</ThemedText> : null}
+
+            <ThemedText type="smallBold">Solutions</ThemedText>
+            {solutions.map((solution) => (
+              <ThemedView key={solution.id} type="backgroundElement" style={styles.card}>
+                <ThemedText>{solution.body}</ThemedText>
+                {solution.url != null && isHttpUrl(solution.url) ? (
+                  <SolutionLink url={solution.url} onOpen={onOpenUrl} />
+                ) : null}
+                <ThemedText type="small" themeColor="textSecondary">
+                  {new Date(solution.createdAt).toLocaleString()}
+                </ThemedText>
+              </ThemedView>
+            ))}
+            <ThemedText type="small" themeColor="textSecondary">
+              Add solution
+            </ThemedText>
+            <TextInput
+              accessibilityLabel="Solution"
+              multiline
+              textAlignVertical="top"
+              value={solutionBody}
+              onChangeText={setSolutionBody}
+              style={[styles.input, styles.inputShort, inputColors(theme)]}
+            />
+            <ThemedText type="small" themeColor="textSecondary">
+              URL (optional)
+            </ThemedText>
+            <TextInput
+              accessibilityLabel="URL (optional)"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              value={solutionUrl}
+              onChangeText={setSolutionUrl}
+              style={[styles.input, inputColors(theme)]}
+            />
+            <Pressable
+              accessibilityRole="button"
+              disabled={trimmedSolution.length === 0}
+              onPress={onAddSolution}
+              style={({ pressed }) => [
+                styles.save,
+                { backgroundColor: theme.backgroundSelected },
+                (trimmedSolution.length === 0 || pressed) && styles.pressed,
+              ]}>
+              <ThemedText type="smallBold">Add solution</ThemedText>
+            </Pressable>
+
+            <ThemedText type="smallBold">Comments</ThemedText>
+            {comments.map((comment) => (
+              <ThemedView key={comment.id} type="backgroundElement" style={styles.card}>
+                <ThemedText>{comment.body}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {new Date(comment.createdAt).toLocaleString()}
+                </ThemedText>
+              </ThemedView>
+            ))}
+            <ThemedText type="small" themeColor="textSecondary">
+              Add comment
+            </ThemedText>
+            <TextInput
+              accessibilityLabel="Comment"
+              multiline
+              textAlignVertical="top"
+              value={commentBody}
+              onChangeText={setCommentBody}
+              style={[styles.input, styles.inputShort, inputColors(theme)]}
+            />
+            <Pressable
+              accessibilityRole="button"
+              disabled={trimmedComment.length === 0}
+              onPress={onAddComment}
+              style={({ pressed }) => [
+                styles.save,
+                { backgroundColor: theme.backgroundSelected },
+                (trimmedComment.length === 0 || pressed) && styles.pressed,
+              ]}>
+              <ThemedText type="smallBold">Add comment</ThemedText>
+            </Pressable>
+          </ScrollView>
         )}
       </ThemedView>
     </>
   );
 }
 
+function SolutionLink({ url, onOpen }: { url: string; onOpen: (url: string) => void }) {
+  return (
+    <Pressable
+      accessibilityRole="link"
+      onPress={() => onOpen(url)}
+      style={({ pressed }) => pressed && styles.pressed}>
+      <ThemedText type="linkPrimary">{url}</ThemedText>
+    </Pressable>
+  );
+}
+
+async function loadThread(
+  db: SQLiteDatabase,
+  id: number,
+): Promise<{ injury: Injury | null; comments: Comment[]; solutions: Solution[] }> {
+  const injury = await getInjuryById(db, id);
+  if (injury == null) {
+    return { injury: null, comments: [], solutions: [] };
+  }
+  const [comments, solutions] = await Promise.all([
+    listCommentsForInjury(db, id),
+    listSolutionsForInjury(db, id),
+  ]);
+  return { injury, comments, solutions };
+}
+
+function inputColors(theme: { text: string; backgroundElement: string }) {
+  return { color: theme.text, backgroundColor: theme.backgroundElement };
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  scroll: {
     padding: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two,
+    paddingBottom: Spacing.six,
+  },
+  card: {
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.three,
+  },
+  input: {
+    minHeight: 48,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    fontSize: 16,
+  },
+  inputShort: {
+    minHeight: 96,
+  },
+  save: {
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.three,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
