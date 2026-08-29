@@ -16,7 +16,8 @@ EMULATOR="${ANDROID_HOME}/emulator/emulator"
 ADB="${ANDROID_HOME}/platform-tools/adb"
 
 log() {
-  printf 'android-emu: %s\n' "$*"
+  # stderr only: wait_for_boot prints the serial on stdout for capture.
+  printf 'android-emu: %s\n' "$*" >&2
 }
 
 die() {
@@ -134,11 +135,14 @@ remove_stray_apks() {
   fi
 }
 
-require_tools
-remove_stray_apks
-start_emulator_if_needed
-SERIAL="$(wait_for_boot)"
-log "emulator ready ($SERIAL)"
-ensure_expo_go "$SERIAL"
-export ANDROID_SERIAL="$SERIAL"
-exec npx expo start --android
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  require_tools
+  remove_stray_apks
+  start_emulator_if_needed
+  SERIAL="$(wait_for_boot)"
+  [[ "$SERIAL" =~ ^emulator-[0-9]+$ ]] || die "unexpected emulator serial: ${SERIAL}"
+  log "emulator ready ($SERIAL)"
+  ensure_expo_go "$SERIAL"
+  export ANDROID_SERIAL="$SERIAL"
+  exec npx expo start --android
+fi

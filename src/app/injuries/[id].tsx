@@ -8,7 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { getInjuryById } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
-import { getLandmarkById } from '@/domain/landmarks';
+import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
 
 export default function InjuryDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -63,7 +63,7 @@ export default function InjuryDetailScreen() {
         ) : (
           <>
             <ThemedText type="smallBold">
-              {landmark == null ? injury.landmarkId : `${landmark.name} · ${landmark.side}`}
+              {landmark == null ? injury.landmarkId : formatLandmarkLabel(landmark, injury.limb)}
             </ThemedText>
             <ThemedText>{injury.description}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">

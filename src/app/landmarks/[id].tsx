@@ -8,12 +8,16 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { listOpenInjuriesForLandmark } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
-import { getLandmarkById } from '@/domain/landmarks';
+import { formatLandmarkLabel, getLandmarkById, parseLimb } from '@/domain/landmarks';
 
 export default function LandmarkInjuriesScreen() {
-  const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id: idParam, limb: limbParam } = useLocalSearchParams<{
+    id?: string | string[];
+    limb?: string | string[];
+  }>();
   const landmarkId = Array.isArray(idParam) ? idParam[0] : idParam;
   const landmark = landmarkId == null ? undefined : getLandmarkById(landmarkId);
+  const limb = parseLimb(Array.isArray(limbParam) ? limbParam[0] : limbParam);
 
   const db = useSQLiteContext();
   const router = useRouter();
@@ -27,7 +31,7 @@ export default function LandmarkInjuriesScreen() {
       }
 
       let cancelled = false;
-      listOpenInjuriesForLandmark(db, landmarkId)
+      listOpenInjuriesForLandmark(db, landmarkId, limb)
         .then((rows) => {
           if (!cancelled) {
             setError(null);
@@ -43,7 +47,7 @@ export default function LandmarkInjuriesScreen() {
       return () => {
         cancelled = true;
       };
-    }, [db, landmark, landmarkId]),
+    }, [db, landmark, landmarkId, limb]),
   );
 
   if (landmarkId == null || landmark == null) {
@@ -60,7 +64,7 @@ export default function LandmarkInjuriesScreen() {
     );
   }
 
-  const title = `${landmark.name} · ${landmark.side}`;
+  const title = formatLandmarkLabel(landmark, limb);
 
   return (
     <>
@@ -74,7 +78,7 @@ export default function LandmarkInjuriesScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/injuries/new',
-                  params: { landmarkId },
+                  params: { landmarkId, ...(limb == null ? {} : { limb }) },
                 })
               }
               style={({ pressed }) => pressed && styles.pressed}>

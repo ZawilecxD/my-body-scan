@@ -1,6 +1,6 @@
 import { Link, Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { BodyOverviewMap } from '@/components/body-overview-map';
@@ -9,7 +9,18 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
-import { getLandmarkById, REGION_ORDER, type Region, type Side } from '@/domain/landmarks';
+import {
+  formatLandmarkLabel,
+  getLandmarkById,
+  injuryMatchesOverviewZone,
+  OVERVIEW_ZONE_IDS,
+  overviewZoneLimb,
+  overviewZoneRegion,
+  REGION_ORDER,
+  type OverviewZoneId,
+  type Region,
+  type Side,
+} from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
 
 type HomeView = 'graphic' | 'list';
@@ -22,9 +33,11 @@ export default function OpenInjuriesScreen() {
   const [side, setSide] = useState<Side>('front');
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigating = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
+      navigating.current = false;
       let cancelled = false;
 
       listOpenInjuries(db)
@@ -46,8 +59,8 @@ export default function OpenInjuriesScreen() {
     }, [db]),
   );
 
-  const openLandmarkIds = new Set((injuries ?? []).map((injury) => injury.landmarkId));
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
+  const openCounts = countOpenByZone(injuries ?? [], side);
 
   return (
     <>
@@ -103,13 +116,22 @@ export default function OpenInjuriesScreen() {
               <ThemedView style={styles.mapFrame}>
                 <BodyOverviewMap
                   side={side}
-                  openLandmarkIds={openLandmarkIds}
-                  onRegionPress={(region) =>
+                  openCounts={openCounts}
+                  onZonePress={(zone) => {
+                    if (navigating.current) {
+                      return;
+                    }
+                    navigating.current = true;
+                    const limb = overviewZoneLimb(zone);
                     router.push({
                       pathname: '/map/[region]',
-                      params: { region, side },
-                    })
-                  }
+                      params: {
+                        region: overviewZoneRegion(zone),
+                        side,
+                        ...(limb == null ? {} : { limb }),
+                      },
+                    });
+                  }}
                 />
               </ThemedView>
             )}
@@ -138,7 +160,7 @@ export default function OpenInjuriesScreen() {
                   const title =
                     landmark == null
                       ? injury.landmarkId
-                      : `${landmark.name} · ${landmark.side}`;
+                      : formatLandmarkLabel(landmark, injury.limb);
 
                   return (
                     <Link key={injury.id} href={`/injuries/${injury.id}`} asChild>
@@ -190,6 +212,22 @@ function SegmentButton({
   );
 }
 
+function countOpenByZone(
+  injuries: Injury[],
+  side: Side,
+): Partial<Record<OverviewZoneId, number>> {
+  const counts: Partial<Record<OverviewZoneId, number>> = {};
+  for (const zone of OVERVIEW_ZONE_IDS) {
+    const count = injuries.filter((injury) =>
+      injuryMatchesOverviewZone(getLandmarkById(injury.landmarkId), injury.limb, side, zone),
+    ).length;
+    if (count > 0) {
+      counts[zone] = count;
+    }
+  }
+  return counts;
+}
+
 function groupInjuriesByRegion(injuries: Injury[]): { region: Region; items: Injury[] }[] {
   return REGION_ORDER.flatMap((region) => {
     const items = injuries.filter((injury) => getLandmarkById(injury.landmarkId)?.region === region);
@@ -220,6 +258,7 @@ const styles = StyleSheet.create({
   mapFrame: {
     flex: 1,
     minHeight: 320,
+    overflow: 'hidden',
   },
   list: {
     gap: Spacing.three,

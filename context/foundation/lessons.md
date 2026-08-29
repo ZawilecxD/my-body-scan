@@ -13,3 +13,10 @@
 - **Why:** A kill between `CREATE TABLE injuries` and `user_version = 1` left version 0 with the table already present; the next launch threw `table already exists` and bricked the app with data intact but unreachable (`log-injury-from-list` impl-review C2).
 - **Applies to:** `src/db/migrate.ts`; every later schema version
 - Graduated to `context/standards/global/sqlite.md` on 2026-08-19.
+
+## Guard async navigation against double tap — 2026-08-25
+
+- **Rule:** Before `router.push` (or any await-then-navigate) from a press handler, set a ref synchronously and return early if it is already set. Clear the ref on failure and when the screen refocuses. Do not rely on `disabled` or `useState` — those only update after a re-render, so a second tap in the same frame still runs.
+- **Why:** Map region and landmark taps had no re-entry guard. A second tap during `listOpenInjuriesForLandmark` stacked a duplicate close-up or create screen, so the first Back looked like a no-op (`body-graphic-map` impl-review S1). The same shape already bit Save (`log-injury-from-list` impl-review S3).
+- **Applies to:** Expo Router screens that navigate on press, especially after an await; create/save buttons
+- Graduated to `context/standards/frontend/navigation.md` on 2026-08-25.

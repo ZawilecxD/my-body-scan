@@ -1,218 +1,63 @@
-import {
-  LANDMARKS,
-  type Region,
-  type Side,
-} from '@/domain/landmarks';
+import { type OverviewZoneId, type Side } from '@/domain/landmarks';
 
-export const OVERVIEW_VIEWBOX = { width: 200, height: 420 } as const;
+export const OVERVIEW_VIEWBOX = { width: 1024, height: 1536 } as const;
 
-export const CLOSE_UP_VIEWBOX = { width: 200, height: 320 } as const;
-
-type RegionPath = { region: Region; d: string };
-type MarkerPoint = { landmarkId: string; cx: number; cy: number };
-type CloseUpTarget = {
-  landmarkId: string;
-  cx: number;
-  cy: number;
-  r: number;
-  label: string;
-};
-
-/** Phone-sized tap radius in close-up viewBox units (≥44 dp when scaled to screen width). */
-const CLOSE_UP_RADIUS = 18;
-
-const FRONT_REGION_PATHS: readonly RegionPath[] = [
-  {
-    region: 'head',
-    d: 'M78 12 H122 Q138 12 138 36 V58 Q138 78 100 78 Q62 78 62 58 V36 Q62 12 78 12 Z',
-  },
-  {
-    region: 'torso',
-    d: 'M72 78 H128 L140 200 H60 Z',
-  },
-  {
-    region: 'arms',
-    d: 'M40 82 H72 V120 H48 L28 210 H12 L32 120 V82 Z M128 82 H160 V120 H168 L188 210 H172 L152 120 V82 Z',
-  },
-  {
-    region: 'legs',
-    d: 'M60 200 H100 V400 H72 V250 H60 Z M100 200 H140 V250 H128 V400 H100 Z',
-  },
-];
-
-const BACK_REGION_PATHS: readonly RegionPath[] = [
-  {
-    region: 'head',
-    d: 'M78 12 H122 Q138 12 138 36 V58 Q138 78 100 78 Q62 78 62 58 V36 Q62 12 78 12 Z',
-  },
-  {
-    region: 'torso',
-    d: 'M72 78 H128 L140 200 H60 Z',
-  },
-  {
-    region: 'arms',
-    d: 'M40 82 H72 V120 H48 L28 210 H12 L32 120 V82 Z M128 82 H160 V120 H168 L188 210 H172 L152 120 V82 Z',
-  },
-  {
-    region: 'legs',
-    d: 'M60 200 H100 V400 H72 V250 H60 Z M100 200 H140 V250 H128 V400 H100 Z',
-  },
-];
-
-/** Overview marker dots keyed by landmark id — one point per §5 row. */
-const OVERVIEW_MARKERS: Readonly<Record<string, { cx: number; cy: number }>> = {
-  'head-front-skull': { cx: 100, cy: 28 },
-  'head-front-jaw': { cx: 100, cy: 52 },
-  'head-front-neck': { cx: 100, cy: 70 },
-  'head-back-skull': { cx: 100, cy: 32 },
-  'head-back-neck': { cx: 100, cy: 70 },
-
-  'torso-front-collarbone': { cx: 100, cy: 92 },
-  'torso-front-chest': { cx: 100, cy: 118 },
-  'torso-front-ribs': { cx: 100, cy: 148 },
-  'torso-front-abdomen': { cx: 100, cy: 178 },
-  'torso-back-upper-back': { cx: 100, cy: 110 },
-  'torso-back-lower-back': { cx: 100, cy: 170 },
-
-  'arms-front-shoulder': { cx: 48, cy: 95 },
-  'arms-front-upper-arm': { cx: 40, cy: 125 },
-  'arms-front-elbow': { cx: 32, cy: 155 },
-  'arms-front-forearm': { cx: 26, cy: 180 },
-  'arms-front-wrist': { cx: 20, cy: 200 },
-  'arms-front-hand': { cx: 16, cy: 215 },
-  'arms-back-shoulder': { cx: 48, cy: 95 },
-  'arms-back-upper-arm': { cx: 40, cy: 125 },
-  'arms-back-elbow': { cx: 32, cy: 155 },
-  'arms-back-forearm': { cx: 26, cy: 180 },
-  'arms-back-wrist': { cx: 20, cy: 200 },
-  'arms-back-hand': { cx: 16, cy: 215 },
-
-  'legs-front-hip': { cx: 80, cy: 215 },
-  'legs-front-thigh': { cx: 80, cy: 255 },
-  'legs-front-knee': { cx: 80, cy: 300 },
-  'legs-front-shin': { cx: 80, cy: 340 },
-  'legs-front-ankle': { cx: 80, cy: 375 },
-  'legs-front-foot': { cx: 80, cy: 400 },
-  'legs-back-glute': { cx: 80, cy: 215 },
-  'legs-back-hamstring': { cx: 80, cy: 255 },
-  'legs-back-knee': { cx: 80, cy: 300 },
-  'legs-back-calf': { cx: 80, cy: 340 },
-  'legs-back-ankle': { cx: 80, cy: 375 },
-  'legs-back-foot': { cx: 80, cy: 400 },
-};
-
-/**
- * Close-up layout: vertical stack of labeled targets per region × side.
- * Arms use left (front) / right (back) columns so both sides stay readable.
- */
-const CLOSE_UP_LAYOUT: Readonly<
-  Record<Region, Partial<Record<Side, readonly { slug: string; cx: number; cy: number }[]>>>
-> = {
-  head: {
-    front: [
-      { slug: 'skull', cx: 100, cy: 60 },
-      { slug: 'jaw', cx: 100, cy: 140 },
-      { slug: 'neck', cx: 100, cy: 220 },
-    ],
-    back: [
-      { slug: 'skull', cx: 100, cy: 90 },
-      { slug: 'neck', cx: 100, cy: 200 },
-    ],
-  },
-  torso: {
-    front: [
-      { slug: 'collarbone', cx: 100, cy: 50 },
-      { slug: 'chest', cx: 100, cy: 110 },
-      { slug: 'ribs', cx: 100, cy: 175 },
-      { slug: 'abdomen', cx: 100, cy: 245 },
-    ],
-    back: [
-      { slug: 'upper-back', cx: 100, cy: 100 },
-      { slug: 'lower-back', cx: 100, cy: 210 },
-    ],
-  },
-  arms: {
-    front: [
-      { slug: 'shoulder', cx: 100, cy: 40 },
-      { slug: 'upper-arm', cx: 100, cy: 90 },
-      { slug: 'elbow', cx: 100, cy: 140 },
-      { slug: 'forearm', cx: 100, cy: 190 },
-      { slug: 'wrist', cx: 100, cy: 240 },
-      { slug: 'hand', cx: 100, cy: 290 },
-    ],
-    back: [
-      { slug: 'shoulder', cx: 100, cy: 40 },
-      { slug: 'upper-arm', cx: 100, cy: 90 },
-      { slug: 'elbow', cx: 100, cy: 140 },
-      { slug: 'forearm', cx: 100, cy: 190 },
-      { slug: 'wrist', cx: 100, cy: 240 },
-      { slug: 'hand', cx: 100, cy: 290 },
-    ],
-  },
-  legs: {
-    front: [
-      { slug: 'hip', cx: 100, cy: 40 },
-      { slug: 'thigh', cx: 100, cy: 90 },
-      { slug: 'knee', cx: 100, cy: 140 },
-      { slug: 'shin', cx: 100, cy: 190 },
-      { slug: 'ankle', cx: 100, cy: 240 },
-      { slug: 'foot', cx: 100, cy: 290 },
-    ],
-    back: [
-      { slug: 'glute', cx: 100, cy: 40 },
-      { slug: 'hamstring', cx: 100, cy: 90 },
-      { slug: 'knee', cx: 100, cy: 140 },
-      { slug: 'calf', cx: 100, cy: 190 },
-      { slug: 'ankle', cx: 100, cy: 240 },
-      { slug: 'foot', cx: 100, cy: 290 },
-    ],
-  },
-};
-
-export function overviewRegionPaths(side: Side): RegionPath[] {
-  return [...(side === 'front' ? FRONT_REGION_PATHS : BACK_REGION_PATHS)];
+/** Scale content to sit inside a box without cropping or stretching. */
+export function fitContain(
+  containerWidth: number,
+  containerHeight: number,
+  contentWidth: number,
+  contentHeight: number,
+): { width: number; height: number } {
+  if (containerWidth <= 0 || containerHeight <= 0 || contentWidth <= 0 || contentHeight <= 0) {
+    return { width: 0, height: 0 };
+  }
+  const scale = Math.min(containerWidth / contentWidth, containerHeight / contentHeight);
+  return { width: contentWidth * scale, height: contentHeight * scale };
 }
 
-export function overviewMarkerPoints(side: Side): MarkerPoint[] {
-  return LANDMARKS.filter((landmark) => landmark.side === side).map((landmark) => {
-    const point = OVERVIEW_MARKERS[landmark.id];
-    if (point == null) {
-      throw new Error(`Missing overview marker for landmark "${landmark.id}"`);
-    }
-    return { landmarkId: landmark.id, cx: point.cx, cy: point.cy };
-  });
+type ZonePath = { zone: OverviewZoneId; d: string };
+
+const FRONT_ZONE_PATHS: readonly ZonePath[] = [
+  { zone: 'head', d: 'M496.0 42.0 L526.0 42.0 L544.0 48.0 L566.0 68.0 L576.0 92.0 L576.0 124.0 L584.0 130.0 L584.0 148.0 L576.0 168.0 L568.0 174.0 L554.0 228.0 L562.0 258.0 L594.0 278.0 L556.0 296.0 L490.0 300.0 L448.0 290.0 L428.0 278.0 L462.0 256.0 L468.0 234.0 L466.0 206.0 L438.0 146.0 L438.0 130.0 L446.0 126.0 L448.0 86.0 L456.0 68.0 L472.0 52.0 L496.0 42.0 Z' },
+  { zone: 'torso', d: 'M596.0 278.0 L640.0 292.0 L652.0 372.0 L650.0 424.0 L622.0 536.0 L622.0 578.0 L634.0 662.0 L602.0 674.0 L546.0 684.0 L460.0 682.0 L390.0 662.0 L400.0 582.0 L400.0 534.0 L370.0 404.0 L372.0 356.0 L384.0 292.0 L428.0 280.0 L466.0 298.0 L532.0 302.0 L574.0 292.0 L596.0 278.0 Z' },
+  { zone: 'right-arm', d: 'M446.0 264.0 L462.0 246.0 L464.0 210.0 L436.0 152.0 L464.0 210.0 L464.0 242.0 L444.0 268.0 L382.0 292.0 L370.0 356.0 L370.0 422.0 L398.0 534.0 L398.0 582.0 L388.0 660.0 L394.0 582.0 L398.0 582.0 L398.0 534.0 L394.0 534.0 L376.0 458.0 L346.0 548.0 L346.0 576.0 L342.0 576.0 L344.0 586.0 L334.0 618.0 L276.0 736.0 L278.0 742.0 L274.0 742.0 L276.0 772.0 L252.0 852.0 L244.0 860.0 L236.0 848.0 L226.0 870.0 L212.0 866.0 L200.0 872.0 L198.0 852.0 L188.0 858.0 L180.0 852.0 L198.0 784.0 L174.0 796.0 L162.0 788.0 L206.0 740.0 L230.0 724.0 L238.0 702.0 L260.0 578.0 L286.0 522.0 L290.0 464.0 L302.0 420.0 L302.0 362.0 L310.0 336.0 L322.0 316.0 L344.0 298.0 L404.0 284.0 L446.0 264.0 Z' },
+  { zone: 'left-arm', d: 'M578.0 264.0 L562.0 246.0 L560.0 210.0 L588.0 152.0 L560.0 210.0 L560.0 242.0 L580.0 268.0 L642.0 292.0 L654.0 356.0 L654.0 422.0 L626.0 534.0 L626.0 582.0 L636.0 660.0 L630.0 582.0 L626.0 582.0 L626.0 534.0 L630.0 534.0 L648.0 458.0 L678.0 548.0 L678.0 576.0 L682.0 576.0 L680.0 586.0 L690.0 618.0 L748.0 736.0 L746.0 742.0 L750.0 742.0 L748.0 772.0 L772.0 852.0 L780.0 860.0 L788.0 848.0 L798.0 870.0 L812.0 866.0 L824.0 872.0 L826.0 852.0 L836.0 858.0 L844.0 852.0 L826.0 784.0 L850.0 796.0 L862.0 788.0 L818.0 740.0 L794.0 724.0 L786.0 702.0 L764.0 578.0 L738.0 522.0 L734.0 464.0 L722.0 420.0 L722.0 362.0 L714.0 336.0 L702.0 316.0 L680.0 298.0 L620.0 284.0 L578.0 264.0 Z' },
+  { zone: 'right-leg', d: 'M388.0 662.0 L476.0 686.0 L506.0 798.0 L492.0 872.0 L446.0 1074.0 L452.0 1172.0 L424.0 1286.0 L426.0 1394.0 L412.0 1416.0 L410.0 1442.0 L390.0 1470.0 L376.0 1470.0 L370.0 1464.0 L358.0 1468.0 L328.0 1450.0 L330.0 1436.0 L370.0 1372.0 L376.0 1338.0 L374.0 1276.0 L358.0 1164.0 L360.0 1114.0 L374.0 1058.0 L376.0 1014.0 L362.0 886.0 L362.0 802.0 L388.0 662.0 Z' },
+  { zone: 'left-leg', d: 'M476.0 686.0 L564.0 684.0 L636.0 666.0 L652.0 738.0 L662.0 820.0 L658.0 914.0 L646.0 1004.0 L648.0 1056.0 L664.0 1128.0 L664.0 1168.0 L648.0 1278.0 L646.0 1336.0 L656.0 1380.0 L694.0 1440.0 L694.0 1450.0 L676.0 1464.0 L628.0 1468.0 L612.0 1442.0 L610.0 1414.0 L596.0 1390.0 L600.0 1374.0 L598.0 1282.0 L570.0 1170.0 L576.0 1072.0 L516.0 798.0 L506.0 798.0 L476.0 686.0 Z' },
+];
+const BACK_ZONE_PATHS: readonly ZonePath[] = [
+  { zone: 'head', d: 'M498.0 40.0 L540.0 44.0 L558.0 54.0 L572.0 72.0 L578.0 92.0 L576.0 130.0 L582.0 128.0 L586.0 138.0 L578.0 164.0 L564.0 176.0 L562.0 224.0 L528.0 218.0 L464.0 224.0 L460.0 174.0 L448.0 166.0 L440.0 144.0 L440.0 130.0 L448.0 130.0 L448.0 86.0 L454.0 70.0 L470.0 52.0 L498.0 40.0 Z' },
+  { zone: 'torso', d: 'M460.0 214.0 L464.0 226.0 L494.0 220.0 L566.0 226.0 L590.0 254.0 L676.0 288.0 L704.0 314.0 L718.0 352.0 L720.0 408.0 L730.0 440.0 L736.0 504.0 L762.0 574.0 L774.0 694.0 L782.0 724.0 L802.0 752.0 L814.0 794.0 L812.0 804.0 L794.0 796.0 L794.0 834.0 L788.0 850.0 L768.0 856.0 L756.0 850.0 L754.0 840.0 L742.0 832.0 L734.0 772.0 L740.0 724.0 L684.0 590.0 L678.0 540.0 L650.0 450.0 L628.0 512.0 L624.0 554.0 L652.0 700.0 L640.0 738.0 L620.0 762.0 L580.0 780.0 L546.0 780.0 L514.0 764.0 L476.0 780.0 L442.0 780.0 L410.0 768.0 L390.0 750.0 L378.0 730.0 L372.0 702.0 L368.0 702.0 L368.0 706.0 L396.0 582.0 L398.0 526.0 L374.0 448.0 L346.0 536.0 L338.0 594.0 L284.0 720.0 L288.0 778.0 L280.0 834.0 L268.0 842.0 L264.0 852.0 L246.0 856.0 L230.0 842.0 L228.0 796.0 L216.0 804.0 L208.0 802.0 L220.0 754.0 L246.0 706.0 L262.0 570.0 L286.0 508.0 L292.0 446.0 L304.0 406.0 L306.0 348.0 L314.0 324.0 L324.0 308.0 L348.0 288.0 L392.0 274.0 L440.0 250.0 L462.0 224.0 L460.0 214.0 Z' },
+  { zone: 'right-arm', d: 'M652.0 284.0 L686.0 298.0 L702.0 316.0 L712.0 340.0 L716.0 406.0 L728.0 446.0 L732.0 500.0 L758.0 570.0 L772.0 700.0 L778.0 722.0 L802.0 760.0 L812.0 798.0 L806.0 800.0 L800.0 794.0 L794.0 776.0 L790.0 840.0 L788.0 846.0 L782.0 844.0 L780.0 796.0 L774.0 854.0 L768.0 848.0 L766.0 798.0 L764.0 846.0 L758.0 848.0 L756.0 842.0 L752.0 796.0 L750.0 834.0 L746.0 834.0 L738.0 778.0 L742.0 720.0 L692.0 606.0 L678.0 526.0 L656.0 466.0 L654.0 428.0 L664.0 392.0 L666.0 322.0 L652.0 284.0 Z' },
+  { zone: 'left-arm', d: 'M366.0 284.0 L372.0 284.0 L356.0 334.0 L360.0 394.0 L370.0 432.0 L366.0 470.0 L346.0 524.0 L330.0 608.0 L280.0 724.0 L286.0 770.0 L278.0 830.0 L274.0 836.0 L270.0 796.0 L266.0 846.0 L260.0 848.0 L258.0 800.0 L254.0 804.0 L254.0 852.0 L248.0 854.0 L244.0 800.0 L240.0 800.0 L238.0 848.0 L232.0 836.0 L230.0 780.0 L218.0 800.0 L210.0 798.0 L222.0 758.0 L244.0 724.0 L252.0 694.0 L264.0 576.0 L290.0 504.0 L294.0 452.0 L308.0 400.0 L312.0 338.0 L326.0 310.0 L344.0 294.0 L366.0 284.0 Z' },
+  { zone: 'left-leg', d: 'M370.0 702.0 L376.0 730.0 L388.0 750.0 L422.0 776.0 L442.0 782.0 L476.0 782.0 L508.0 766.0 L502.0 838.0 L476.0 940.0 L468.0 1004.0 L450.0 1066.0 L454.0 1152.0 L426.0 1288.0 L428.0 1414.0 L412.0 1424.0 L386.0 1422.0 L352.0 1406.0 L352.0 1398.0 L380.0 1372.0 L380.0 1298.0 L356.0 1156.0 L358.0 1102.0 L376.0 998.0 L358.0 854.0 L358.0 782.0 L370.0 702.0 Z' },
+  { zone: 'right-leg', d: 'M652.0 702.0 L662.0 766.0 L662.0 860.0 L646.0 956.0 L644.0 1022.0 L660.0 1098.0 L662.0 1158.0 L638.0 1296.0 L638.0 1372.0 L664.0 1394.0 L666.0 1406.0 L632.0 1422.0 L606.0 1424.0 L590.0 1412.0 L592.0 1286.0 L566.0 1164.0 L568.0 1058.0 L552.0 1006.0 L546.0 950.0 L520.0 844.0 L514.0 766.0 L546.0 782.0 L580.0 782.0 L600.0 776.0 L620.0 764.0 L638.0 744.0 L652.0 702.0 Z' },
+];
+
+const OVERVIEW_BADGES: Readonly<Record<Side, Readonly<Record<OverviewZoneId, { cx: number; cy: number }>>>> = {
+  front: {
+    head: { cx: 690, cy: 120 },
+    torso: { cx: 512, cy: 500 },
+    'right-arm': { cx: 120, cy: 520 },
+    'left-arm': { cx: 904, cy: 520 },
+    'right-leg': { cx: 200, cy: 1080 },
+    'left-leg': { cx: 824, cy: 1080 },
+  },
+  back: {
+    head: { cx: 690, cy: 110 },
+    torso: { cx: 512, cy: 500 },
+    'left-arm': { cx: 120, cy: 520 },
+    'right-arm': { cx: 904, cy: 520 },
+    'left-leg': { cx: 200, cy: 1080 },
+    'right-leg': { cx: 824, cy: 1080 },
+  },
+};
+
+export function overviewZonePaths(side: Side): ZonePath[] {
+  return [...(side === 'front' ? FRONT_ZONE_PATHS : BACK_ZONE_PATHS)];
 }
 
-export function closeUpTargets(region: Region, side: Side): CloseUpTarget[] {
-  const layout = CLOSE_UP_LAYOUT[region][side];
-  if (layout == null) {
-    throw new Error(`Missing close-up layout for ${region} · ${side}`);
-  }
-
-  const expected = LANDMARKS.filter(
-    (landmark) => landmark.region === region && landmark.side === side,
-  );
-
-  const targets = layout.map((entry) => {
-    const landmarkId = `${region}-${side}-${entry.slug}`;
-    const landmark = expected.find((row) => row.id === landmarkId);
-    if (landmark == null) {
-      throw new Error(`Close-up layout has unknown landmark "${landmarkId}"`);
-    }
-    return {
-      landmarkId,
-      cx: entry.cx,
-      cy: entry.cy,
-      r: CLOSE_UP_RADIUS,
-      label: landmark.name,
-    };
-  });
-
-  if (targets.length !== expected.length) {
-    throw new Error(
-      `Close-up layout for ${region} · ${side} has ${targets.length} targets, catalog has ${expected.length}`,
-    );
-  }
-
-  return targets;
+export function overviewBadgePoint(side: Side, zone: OverviewZoneId): { cx: number; cy: number } {
+  return OVERVIEW_BADGES[side][zone];
 }

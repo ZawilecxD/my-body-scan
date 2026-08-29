@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   const result = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -20,8 +20,19 @@ CREATE TABLE IF NOT EXISTS injuries (
   landmark_id TEXT NOT NULL,
   description TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  limb TEXT
 );
+PRAGMA user_version = ${DATABASE_VERSION};
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 1) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+ALTER TABLE injuries ADD COLUMN limb TEXT;
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
     });

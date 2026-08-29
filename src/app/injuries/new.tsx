@@ -7,13 +7,17 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { createInjury } from '@/db/injuries';
-import { getLandmarkById } from '@/domain/landmarks';
+import { formatLandmarkLabel, getLandmarkById, parseLimb } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function NewInjuryScreen() {
-  const { landmarkId: landmarkIdParam } = useLocalSearchParams<{ landmarkId?: string | string[] }>();
+  const { landmarkId: landmarkIdParam, limb: limbParam } = useLocalSearchParams<{
+    landmarkId?: string | string[];
+    limb?: string | string[];
+  }>();
   const landmarkId = Array.isArray(landmarkIdParam) ? landmarkIdParam[0] : landmarkIdParam;
   const landmark = landmarkId == null ? undefined : getLandmarkById(landmarkId);
+  const limb = parseLimb(Array.isArray(limbParam) ? limbParam[0] : limbParam);
 
   const db = useSQLiteContext();
   const router = useRouter();
@@ -47,7 +51,7 @@ export default function NewInjuryScreen() {
     setIsSaving(true);
     setError(null);
     try {
-      const injury = await createInjury(db, { landmarkId, description });
+      const injury = await createInjury(db, { landmarkId, description, limb });
       router.replace(`/injuries/${injury.id}`);
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : 'Cannot save injury');
@@ -60,7 +64,7 @@ export default function NewInjuryScreen() {
       <Stack.Screen options={{ title: 'Log injury' }} />
       <ThemedView style={styles.screen}>
         <ThemedText type="smallBold">
-          {landmark.name} · {landmark.side}
+          {formatLandmarkLabel(landmark, limb)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           Description
