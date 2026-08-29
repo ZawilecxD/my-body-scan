@@ -44,7 +44,7 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Outcome:** User can archive an open injury; it vanishes from the open list and map markers, remains readable with full history in a separate archive, and can be reopened without creating a duplicate.
 - **Layers:** injury status (`open` | `archived`), archive screen, reopen action
 - **PRD:** G2 (open vs healed split), G3, J3, FR-8, FR-14, FR-15, FR-16
-- **Status:** ready
+- **Status:** done
 - **Next:** `/11x-new archive-and-reopen archive healed injuries and reopen a flare-up`
 
 ## Post-MVP
@@ -91,3 +91,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 ## Done
 
 - 2026-08-19 — `log-injury-from-list` → `context/archive/2026-08-17-log-injury-from-list/`
+- 2026-08-29 — `archive-and-reopen` → `context/archive/2026-08-29-archive-and-reopen/`
