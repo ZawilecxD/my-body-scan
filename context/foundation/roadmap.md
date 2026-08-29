@@ -55,6 +55,7 @@ Ordered wishlist after the Android MVP slices above. Each item is a **separate c
 
 - **Outcome:** User can export injury data (and restore or re-import on the same or a new device) so uninstall or phone swap does not lose the log.
 - **Why next:** Local-only SQLite has no recovery path today; needed before a wider audience or Play publish.
+- **Status:** ready
 - **Next when ready:** `/11x-new export-backup on-device export and restore of injury data`
 
 ### 6. Severity trend
