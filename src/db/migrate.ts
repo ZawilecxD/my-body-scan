@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 4;
 
 const COMMENTS_AND_SOLUTIONS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS injuries (
   description TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL,
-  limb TEXT
+  limb TEXT,
+  archived_at TEXT
 );
 ${COMMENTS_AND_SOLUTIONS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
@@ -50,6 +51,7 @@ PRAGMA user_version = ${DATABASE_VERSION};
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
 ALTER TABLE injuries ADD COLUMN limb TEXT;
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${COMMENTS_AND_SOLUTIONS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
@@ -60,7 +62,18 @@ PRAGMA user_version = ${DATABASE_VERSION};
   if (currentDbVersion === 2) {
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${COMMENTS_AND_SOLUTIONS_DDL}
+PRAGMA user_version = ${DATABASE_VERSION};
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 3) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
     });

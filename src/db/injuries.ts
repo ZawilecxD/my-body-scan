@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { Injury } from '@/domain/injury';
+import type { Injury, InjuryStatus } from '@/domain/injury';
 import { getLandmarkById, parseLimb, type Limb } from '@/domain/landmarks';
 
 type InjuryRow = {
@@ -9,8 +9,12 @@ type InjuryRow = {
   description: string;
   status: string;
   created_at: string;
+  archived_at: string | null;
   limb: string | null;
 };
+
+const INJURY_COLUMNS =
+  'id, landmark_id, description, status, created_at, archived_at, limb';
 
 export async function createInjury(
   db: SQLiteDatabase,
@@ -28,12 +32,13 @@ export async function createInjury(
   const limb = input.limb ?? null;
   const createdAt = new Date().toISOString();
   const result = await db.runAsync(
-    'INSERT INTO injuries (landmark_id, description, status, created_at, limb) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO injuries (landmark_id, description, status, created_at, limb, archived_at) VALUES (?, ?, ?, ?, ?, ?)',
     input.landmarkId,
     description,
     'open',
     createdAt,
     limb,
+    null,
   );
 
   return {
@@ -42,14 +47,23 @@ export async function createInjury(
     description,
     status: 'open',
     createdAt,
+    archivedAt: null,
     limb,
   };
 }
 
 export async function listOpenInjuries(db: SQLiteDatabase): Promise<Injury[]> {
   const rows = await db.getAllAsync<InjuryRow>(
-    'SELECT id, landmark_id, description, status, created_at, limb FROM injuries WHERE status = ? ORDER BY created_at DESC',
+    `SELECT ${INJURY_COLUMNS} FROM injuries WHERE status = ? ORDER BY created_at DESC`,
     'open',
+  );
+  return rows.map(mapInjury);
+}
+
+export async function listArchivedInjuries(db: SQLiteDatabase): Promise<Injury[]> {
+  const rows = await db.getAllAsync<InjuryRow>(
+    `SELECT ${INJURY_COLUMNS} FROM injuries WHERE status = ? ORDER BY archived_at DESC`,
+    'archived',
   );
   return rows.map(mapInjury);
 }
@@ -65,7 +79,7 @@ export async function listOpenInjuriesForLandmark(
 
   if (limb == null) {
     const rows = await db.getAllAsync<InjuryRow>(
-      'SELECT id, landmark_id, description, status, created_at, limb FROM injuries WHERE status = ? AND landmark_id = ? ORDER BY created_at DESC',
+      `SELECT ${INJURY_COLUMNS} FROM injuries WHERE status = ? AND landmark_id = ? ORDER BY created_at DESC`,
       'open',
       landmarkId,
     );
@@ -73,7 +87,7 @@ export async function listOpenInjuriesForLandmark(
   }
 
   const rows = await db.getAllAsync<InjuryRow>(
-    'SELECT id, landmark_id, description, status, created_at, limb FROM injuries WHERE status = ? AND landmark_id = ? AND limb = ? ORDER BY created_at DESC',
+    `SELECT ${INJURY_COLUMNS} FROM injuries WHERE status = ? AND landmark_id = ? AND limb = ? ORDER BY created_at DESC`,
     'open',
     landmarkId,
     limb,
@@ -83,7 +97,7 @@ export async function listOpenInjuriesForLandmark(
 
 export async function getInjuryById(db: SQLiteDatabase, id: number): Promise<Injury | null> {
   const row = await db.getFirstAsync<InjuryRow>(
-    'SELECT id, landmark_id, description, status, created_at, limb FROM injuries WHERE id = ?',
+    `SELECT ${INJURY_COLUMNS} FROM injuries WHERE id = ?`,
     id,
   );
   if (row == null) {
@@ -92,13 +106,67 @@ export async function getInjuryById(db: SQLiteDatabase, id: number): Promise<Inj
   return mapInjury(row);
 }
 
+export async function archiveInjury(db: SQLiteDatabase, id: number): Promise<Injury> {
+  const injury = await getInjuryById(db, id);
+  if (injury == null) {
+    throw new Error(`Cannot archive injury: not found (${id})`);
+  }
+  if (injury.status === 'archived') {
+    throw new Error(`Cannot archive injury: already archived (${id})`);
+  }
+
+  const archivedAt = new Date().toISOString();
+  await db.runAsync(
+    'UPDATE injuries SET status = ?, archived_at = ? WHERE id = ?',
+    'archived',
+    archivedAt,
+    id,
+  );
+
+  return {
+    ...injury,
+    status: 'archived',
+    archivedAt,
+  };
+}
+
+export async function reopenInjury(db: SQLiteDatabase, id: number): Promise<Injury> {
+  const injury = await getInjuryById(db, id);
+  if (injury == null) {
+    throw new Error(`Cannot reopen injury: not found (${id})`);
+  }
+  if (injury.status === 'open') {
+    throw new Error(`Cannot reopen injury: already open (${id})`);
+  }
+
+  await db.runAsync(
+    'UPDATE injuries SET status = ?, archived_at = NULL WHERE id = ?',
+    'open',
+    id,
+  );
+
+  return {
+    ...injury,
+    status: 'open',
+    archivedAt: null,
+  };
+}
+
 function mapInjury(row: InjuryRow): Injury {
   return {
     id: row.id,
     landmarkId: row.landmark_id,
     description: row.description,
-    status: 'open',
+    status: parseStatus(row.status, row.id),
     createdAt: row.created_at,
+    archivedAt: row.archived_at,
     limb: parseLimb(row.limb ?? undefined),
   };
+}
+
+function parseStatus(value: string, injuryId: number): InjuryStatus {
+  if (value === 'open' || value === 'archived') {
+    return value;
+  }
+  throw new Error(`Cannot map injury ${injuryId}: unknown status "${value}"`);
 }

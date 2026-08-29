@@ -1,11 +1,14 @@
 import type { Limb } from '@/domain/landmarks';
 
+export type InjuryStatus = 'open' | 'archived';
+
 export type Injury = {
   id: number;
   landmarkId: string;
   description: string;
-  status: 'open';
+  status: InjuryStatus;
   createdAt: string;
+  archivedAt: string | null;
   limb: Limb | null;
 };
 

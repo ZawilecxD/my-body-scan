@@ -25,6 +25,9 @@ export async function createSolution(
   if (injury == null) {
     throw new Error(`Cannot create solution: injury not found (${input.injuryId})`);
   }
+  if (injury.status !== 'open') {
+    throw new Error(`Cannot create solution: injury is archived (${input.injuryId})`);
+  }
 
   const trimmedUrl = input.url?.trim() ?? '';
   const url = trimmedUrl.length === 0 ? null : trimmedUrl;

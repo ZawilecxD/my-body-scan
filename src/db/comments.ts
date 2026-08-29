@@ -23,6 +23,9 @@ export async function createComment(
   if (injury == null) {
     throw new Error(`Cannot create comment: injury not found (${input.injuryId})`);
   }
+  if (injury.status !== 'open') {
+    throw new Error(`Cannot create comment: injury is archived (${input.injuryId})`);
+  }
 
   const createdAt = new Date().toISOString();
   const result = await db.runAsync(
