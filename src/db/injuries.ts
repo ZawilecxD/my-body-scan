@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { insertInjuryEvent } from '@/db/events';
 import type { Injury, InjuryStatus } from '@/domain/injury';
 import { getLandmarkById, parseLimb, type Limb } from '@/domain/landmarks';
 
@@ -41,7 +42,7 @@ export async function createInjury(
     null,
   );
 
-  return {
+  const injury: Injury = {
     id: result.lastInsertRowId,
     landmarkId: input.landmarkId,
     description,
@@ -50,6 +51,14 @@ export async function createInjury(
     archivedAt: null,
     limb,
   };
+
+  await insertInjuryEvent(db, {
+    injuryId: injury.id,
+    type: 'created',
+    createdAt,
+  });
+
+  return injury;
 }
 
 export async function listOpenInjuries(db: SQLiteDatabase): Promise<Injury[]> {
@@ -123,6 +132,12 @@ export async function archiveInjury(db: SQLiteDatabase, id: number): Promise<Inj
     id,
   );
 
+  await insertInjuryEvent(db, {
+    injuryId: id,
+    type: 'archived',
+    createdAt: archivedAt,
+  });
+
   return {
     ...injury,
     status: 'archived',
@@ -139,11 +154,18 @@ export async function reopenInjury(db: SQLiteDatabase, id: number): Promise<Inju
     throw new Error(`Cannot reopen injury: already open (${id})`);
   }
 
+  const reopenedAt = new Date().toISOString();
   await db.runAsync(
     'UPDATE injuries SET status = ?, archived_at = NULL WHERE id = ?',
     'open',
     id,
   );
+
+  await insertInjuryEvent(db, {
+    injuryId: id,
+    type: 'reopened',
+    createdAt: reopenedAt,
+  });
 
   return {
     ...injury,

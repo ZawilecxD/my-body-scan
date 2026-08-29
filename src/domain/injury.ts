@@ -25,4 +25,20 @@ export type Solution = {
   body: string;
   url: string | null;
   createdAt: string;
+  removedAt: string | null;
+};
+
+export type InjuryEventType =
+  | 'created'
+  | 'archived'
+  | 'reopened'
+  | 'solution_added'
+  | 'solution_removed';
+
+export type InjuryEvent = {
+  id: number;
+  injuryId: number;
+  type: InjuryEventType;
+  solutionId: number | null;
+  createdAt: string;
 };
