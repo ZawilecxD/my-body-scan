@@ -2,7 +2,7 @@
 change_id: archive-and-reopen
 title: Archive when healed, reopen on flare-up
 type: feature
-status: implementing
+status: mr_ready
 created: 2026-08-29
 updated: 2026-08-29
 archived_at: null

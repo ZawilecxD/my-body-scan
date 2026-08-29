@@ -170,7 +170,7 @@ Wire Archive / Reopen on detail; add `/archive` list; link from home.
 
 #### Automated
 
-- [ ] 2.1 Detail Archive/Reopen, `/archive` screen, home Archive link; `tsc` green
+- [x] 2.1 Detail Archive/Reopen, `/archive` screen, home Archive link; `tsc` green — 245e9d6
 
 #### Manual
 
