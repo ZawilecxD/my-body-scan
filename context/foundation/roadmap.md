@@ -28,7 +28,7 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Outcome:** User can toggle graphic vs list, flip front/back, tap a region close-up, tap a landmark to create or open an injury, and see open-injury markers on the schematic map.
 - **Layers:** react-native-svg maps, navigation (region → close-up), markers on existing injuries
 - **PRD:** G1, G4 (graphic/list/close-up), J1, FR-1–FR-5, FR-7
-- **Status:** ready
+- **Status:** done
 - **Next:** `/11x-new body-graphic-map front/back SVG map with region close-ups and open-injury markers`
 
 ### 3. Injury thread — comments and solutions
@@ -92,3 +92,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 
 - 2026-08-19 — `log-injury-from-list` → `context/archive/2026-08-17-log-injury-from-list/`
 - 2026-08-29 — `archive-and-reopen` → `context/archive/2026-08-29-archive-and-reopen/`
+- 2026-08-29 — `body-graphic-map` → `context/archive/2026-08-25-body-graphic-map/`
