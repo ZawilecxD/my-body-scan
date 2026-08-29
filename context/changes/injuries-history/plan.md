@@ -192,8 +192,8 @@ Injury detail loads and shows History; open injuries can Remove a solution.
 
 #### Automated
 
-- [ ] 2.1 History section and Remove on open injury detail
-- [ ] 2.2 `npx tsc --noEmit` exits 0
+- [x] 2.1 History section and Remove on open injury detail — 23bbcdf
+- [x] 2.2 `npx tsc --noEmit` exits 0 — 23bbcdf
 
 #### Manual
 
