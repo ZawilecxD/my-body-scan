@@ -160,7 +160,7 @@ Wire Archive / Reopen on detail; add `/archive` list; link from home.
 
 #### Automated
 
-- [ ] 1.1 Domain status + archivedAt, migrate v4, archive/reopen/list APIs, open-only comment/solution writes
+- [x] 1.1 Domain status + archivedAt, migrate v4, archive/reopen/list APIs, open-only comment/solution writes — 9c5cffb
 
 #### Manual
 
