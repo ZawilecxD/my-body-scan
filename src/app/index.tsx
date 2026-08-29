@@ -1,14 +1,16 @@
-import { Link, Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { BodyOverviewMap } from '@/components/body-overview-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
-import type { Injury } from '@/domain/injury';
+import { listLatestSolutionsByInjuryIds } from '@/db/solutions';
+import { isHttpUrl } from '@/domain/http-url';
+import type { Injury, Solution } from '@/domain/injury';
 import {
   formatLandmarkLabel,
   getLandmarkById,
@@ -32,6 +34,7 @@ export default function OpenInjuriesScreen() {
   const [view, setView] = useState<HomeView>('graphic');
   const [side, setSide] = useState<Side>('front');
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
+  const [latestSolutions, setLatestSolutions] = useState<Record<number, Solution>>({});
   const [error, setError] = useState<string | null>(null);
   const navigating = useRef(false);
 
@@ -41,10 +44,15 @@ export default function OpenInjuriesScreen() {
       let cancelled = false;
 
       listOpenInjuries(db)
-        .then((rows) => {
+        .then(async (rows) => {
+          const latest = await listLatestSolutionsByInjuryIds(
+            db,
+            rows.map((row) => row.id),
+          );
           if (!cancelled) {
             setError(null);
             setInjuries(rows);
+            setLatestSolutions(latest);
           }
         })
         .catch((caught: unknown) => {
@@ -161,20 +169,54 @@ export default function OpenInjuriesScreen() {
                     landmark == null
                       ? injury.landmarkId
                       : formatLandmarkLabel(landmark, injury.limb);
+                  const latest = latestSolutions[injury.id];
 
                   return (
-                    <Link key={injury.id} href={`/injuries/${injury.id}`} asChild>
+                    <ThemedView
+                      key={injury.id}
+                      type="backgroundElement"
+                      style={styles.rowInner}>
                       <Pressable
                         accessibilityRole="button"
-                        style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-                        <ThemedView type="backgroundElement" style={styles.rowInner}>
-                          <ThemedText type="smallBold">{title}</ThemedText>
-                          <ThemedText themeColor="textSecondary" numberOfLines={2}>
-                            {injury.description}
-                          </ThemedText>
-                        </ThemedView>
+                        onPress={() => {
+                          if (navigating.current) {
+                            return;
+                          }
+                          navigating.current = true;
+                          router.push(`/injuries/${injury.id}`);
+                        }}
+                        style={({ pressed }) => pressed && styles.pressed}>
+                        <ThemedText type="smallBold">{title}</ThemedText>
+                        <ThemedText themeColor="textSecondary" numberOfLines={2}>
+                          {injury.description}
+                        </ThemedText>
                       </Pressable>
-                    </Link>
+                      {latest != null ? (
+                        <>
+                          <ThemedText numberOfLines={1}>{latest.body}</ThemedText>
+                          {latest.url != null && isHttpUrl(latest.url) ? (
+                            <Pressable
+                              accessibilityRole="link"
+                              onPress={() => {
+                                const url = latest.url;
+                                if (url == null || !isHttpUrl(url)) {
+                                  return;
+                                }
+                                Linking.openURL(url).catch((caught: unknown) => {
+                                  setError(
+                                    caught instanceof Error
+                                      ? caught.message
+                                      : `Cannot open URL (${url})`,
+                                  );
+                                });
+                              }}
+                              style={({ pressed }) => pressed && styles.pressed}>
+                              <ThemedText type="linkPrimary">Open link</ThemedText>
+                            </Pressable>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </ThemedView>
                   );
                 })}
               </ThemedView>
@@ -266,9 +308,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Spacing.two,
-  },
-  row: {
-    borderRadius: Spacing.three,
   },
   rowInner: {
     gap: Spacing.one,
