@@ -10,7 +10,7 @@ No project git/MR skill or MCP is configured. Paste this file as the MR body.
 - Phase 1: Schema v3 and persist API — 111bf80
 - Phase 2: Injury detail thread — 27ca8f4
 - Phase 3: Latest solution on the open list — 1656b62
-- Impl-review C1: list URL failure must not wipe rows — (this commit)
+- Impl-review C1: list URL failure must not wipe rows — bd1968c
 
 ## Assumptions
 
