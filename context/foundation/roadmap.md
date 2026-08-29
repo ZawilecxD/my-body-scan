@@ -94,3 +94,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 - 2026-08-29 — `archive-and-reopen` → `context/archive/2026-08-29-archive-and-reopen/`
 - 2026-08-29 — `body-graphic-map` → `context/archive/2026-08-25-body-graphic-map/`
 - 2026-08-29 — `export-backup` → `context/archive/2026-08-29-export-backup/`
+- 2026-08-29 — `injuries-history` → `context/archive/2026-08-29-injuries-history/`
