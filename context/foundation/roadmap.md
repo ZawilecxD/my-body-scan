@@ -47,16 +47,42 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Status:** ready
 - **Next:** `/11x-new archive-and-reopen archive healed injuries and reopen a flare-up`
 
+## Post-MVP
+
+Ordered wishlist after the Android MVP slices above. Each item is a **separate change** when started (`/11x-new`), not one effort. Do not pull these into MVP.
+
+### 5. Export / backup
+
+- **Outcome:** User can export injury data (and restore or re-import on the same or a new device) so uninstall or phone swap does not lose the log.
+- **Why next:** Local-only SQLite has no recovery path today; needed before a wider audience or Play publish.
+- **Next when ready:** `/11x-new export-backup on-device export and restore of injury data`
+
+### 6. Severity trend
+
+- **Outcome:** User can record a simple severity/pain reading over time on an injury and see the trend without the app diagnosing or advising treatment.
+- **Next when ready:** `/11x-new severity-trend severity readings over time on an injury`
+
+### 7. Physio-ready summary
+
+- **Outcome:** User can produce a one-way shareable summary (e.g. PDF or share sheet) of open injuries and latest solutions for a physio — no accounts or multi-user sync.
+- **Depends on:** export format from slice 5 helps; severity from slice 6 is optional enrichment.
+- **Next when ready:** `/11x-new physio-summary shareable status summary for a physio`
+
+### 8. iOS
+
+- **Outcome:** Same product loop runs as a polished iOS build (Expo already supports 16.4+); store listing and platform polish as needed.
+- **Next when ready:** `/11x-new ios-port ship the MVP product loop on iOS`
+
 ## Parked
 
-From PRD non-goals — do not pull into a slice:
+From PRD non-goals — do not pull into a slice (or into Post-MVP without an explicit decision):
 
-- iOS / web
+- Web
 - Camera, photo, or any real body scan
 - 3D, medical-grade anatomy, left/right tap targets, muscle-fiber picking
 - Built-in exercise catalog
-- Accounts, cloud sync, backup, export
-- Physio sharing or any multi-user flow
+- Accounts, cloud sync (on-device export/backup is Post-MVP §5, not cloud)
+- Multi-user physio collaboration (one-way summary is Post-MVP §7)
 - Diagnosis, AI advice, or medical-device presentation
 
 Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen) is in slice 4.
