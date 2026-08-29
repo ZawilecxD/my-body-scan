@@ -1,7 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Svg, { Polyline } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { createComment, listCommentsForInjury } from '@/db/comments';
 import { listEventsForInjury } from '@/db/events';
 import { archiveInjury, getInjuryById, reopenInjury } from '@/db/injuries';
+import { createSeverityReading, listSeverityReadingsForInjury } from '@/db/readings';
 import {
   createSolution,
   getSolutionById,
@@ -16,7 +18,7 @@ import {
   removeSolution,
 } from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
-import type { Comment, Injury, InjuryEvent, Solution } from '@/domain/injury';
+import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -31,14 +33,17 @@ export default function InjuryDetailScreen() {
   const [injury, setInjury] = useState<Injury | null | undefined>(undefined);
   const [comments, setComments] = useState<Comment[]>([]);
   const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [readings, setReadings] = useState<SeverityReading[]>([]);
   const [events, setEvents] = useState<InjuryEvent[]>([]);
   const [eventLabels, setEventLabels] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [solutionBody, setSolutionBody] = useState('');
   const [solutionUrl, setSolutionUrl] = useState('');
+  const [severityText, setSeverityText] = useState('');
   const addingComment = useRef(false);
   const addingSolution = useRef(false);
+  const addingReading = useRef(false);
   const removingSolution = useRef(false);
   const statusAction = useRef(false);
 
@@ -64,6 +69,7 @@ export default function InjuryDetailScreen() {
         setInjury(loaded.injury);
         setComments(loaded.comments);
         setSolutions(loaded.solutions);
+        setReadings(loaded.readings);
         setEvents(loaded.events);
         setEventLabels(loaded.eventLabels);
       })
@@ -82,6 +88,8 @@ export default function InjuryDetailScreen() {
   const landmark = injury == null ? undefined : getLandmarkById(injury.landmarkId);
   const trimmedComment = commentBody.trim();
   const trimmedSolution = solutionBody.trim();
+  const trimmedSeverity = severityText.trim();
+  const parsedSeverity = parseSeverityInput(trimmedSeverity);
   const isOpen = injury?.status === 'open';
 
   async function reloadSolutionsAndEvents() {
@@ -128,6 +136,24 @@ export default function InjuryDetailScreen() {
       setError(caught instanceof Error ? caught.message : 'Cannot add solution');
     } finally {
       addingSolution.current = false;
+    }
+  }
+
+  async function onAddReading() {
+    if (addingReading.current || parsedSeverity == null || Number.isNaN(id) || !isOpen) {
+      return;
+    }
+    addingReading.current = true;
+    try {
+      await createSeverityReading(db, { injuryId: id, value: parsedSeverity });
+      const next = await listSeverityReadingsForInjury(db, id);
+      setReadings(next);
+      setSeverityText('');
+      setError(null);
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : 'Cannot add severity reading');
+    } finally {
+      addingReading.current = false;
     }
   }
 
@@ -302,6 +328,50 @@ export default function InjuryDetailScreen() {
               </>
             ) : null}
 
+            <ThemedText type="smallBold">Severity</ThemedText>
+            {readings.length >= 2 ? (
+              <SeverityTrendChart readings={readings} stroke={theme.text} />
+            ) : null}
+            {readings.length === 0 ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                No severity readings yet.
+              </ThemedText>
+            ) : (
+              readings.map((reading) => (
+                <ThemedView key={reading.id} type="backgroundElement" style={styles.card}>
+                  <ThemedText>{reading.value} / 10</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {new Date(reading.createdAt).toLocaleString()}
+                  </ThemedText>
+                </ThemedView>
+              ))
+            )}
+            {isOpen ? (
+              <>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Severity 0–10
+                </ThemedText>
+                <TextInput
+                  accessibilityLabel="Severity 0–10"
+                  keyboardType="number-pad"
+                  value={severityText}
+                  onChangeText={setSeverityText}
+                  style={[styles.input, inputColors(theme)]}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={parsedSeverity == null}
+                  onPress={onAddReading}
+                  style={({ pressed }) => [
+                    styles.save,
+                    { backgroundColor: theme.backgroundSelected },
+                    (parsedSeverity == null || pressed) && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold">Add</ThemedText>
+                </Pressable>
+              </>
+            ) : null}
+
             <ThemedText type="smallBold">Comments</ThemedText>
             {comments.map((comment) => (
               <ThemedView key={comment.id} type="backgroundElement" style={styles.card}>
@@ -351,6 +421,51 @@ export default function InjuryDetailScreen() {
         )}
       </ThemedView>
     </>
+  );
+}
+
+function parseSeverityInput(text: string): number | null {
+  if (text.length === 0) {
+    return null;
+  }
+  if (!/^\d{1,2}$/.test(text)) {
+    return null;
+  }
+  const value = Number(text);
+  if (!Number.isInteger(value) || value < 0 || value > 10) {
+    return null;
+  }
+  return value;
+}
+
+function SeverityTrendChart({
+  readings,
+  stroke,
+}: {
+  readings: SeverityReading[];
+  stroke: string;
+}) {
+  const width = 280;
+  const height = 72;
+  const padX = 8;
+  const padY = 8;
+  const innerW = width - padX * 2;
+  const innerH = height - padY * 2;
+  const last = readings.length - 1;
+  const points = readings
+    .map((reading, index) => {
+      const x = padX + (last === 0 ? innerW / 2 : (index / last) * innerW);
+      const y = padY + innerH - (reading.value / 10) * innerH;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <View style={styles.chart} accessibilityLabel="Severity trend">
+      <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Polyline points={points} fill="none" stroke={stroke} strokeWidth={2} />
+      </Svg>
+    </View>
   );
 }
 
@@ -408,20 +523,29 @@ async function loadThread(
   injury: Injury | null;
   comments: Comment[];
   solutions: Solution[];
+  readings: SeverityReading[];
   events: InjuryEvent[];
   eventLabels: Record<number, string>;
 }> {
   const injury = await getInjuryById(db, id);
   if (injury == null) {
-    return { injury: null, comments: [], solutions: [], events: [], eventLabels: {} };
+    return {
+      injury: null,
+      comments: [],
+      solutions: [],
+      readings: [],
+      events: [],
+      eventLabels: {},
+    };
   }
-  const [comments, solutions, events] = await Promise.all([
+  const [comments, solutions, readings, events] = await Promise.all([
     listCommentsForInjury(db, id),
     listSolutionsForInjury(db, id),
+    listSeverityReadingsForInjury(db, id),
     listEventsForInjury(db, id),
   ]);
   const eventLabels = await labelsForEvents(db, events);
-  return { injury, comments, solutions, events, eventLabels };
+  return { injury, comments, solutions, readings, events, eventLabels };
 }
 
 function inputColors(theme: { text: string; backgroundElement: string }) {
@@ -442,6 +566,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: Spacing.three,
+  },
+  chart: {
+    height: 72,
+    marginVertical: Spacing.one,
   },
   input: {
     minHeight: 48,

@@ -174,9 +174,9 @@ Severity section on injury detail: compose (open), list, SVG sparkline when ≥2
 
 #### Automated
 
-- [ ] 1.1 Schema v6 + SeverityReading + readings.ts
-- [ ] 1.2 Backup dump/parse/replace includes readings
-- [ ] 1.3 tsc --noEmit passes
+- [x] 1.1 Schema v6 + SeverityReading + readings.ts — 116b83b
+- [x] 1.2 Backup dump/parse/replace includes readings — 116b83b
+- [x] 1.3 tsc --noEmit passes — 116b83b
 
 #### Manual
 
