@@ -8,3 +8,18 @@ export type Injury = {
   createdAt: string;
   limb: Limb | null;
 };
+
+export type Comment = {
+  id: number;
+  injuryId: number;
+  body: string;
+  createdAt: string;
+};
+
+export type Solution = {
+  id: number;
+  injuryId: number;
+  body: string;
+  url: string | null;
+  createdAt: string;
+};
