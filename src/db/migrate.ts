@@ -1,14 +1,17 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 5;
 
-const COMMENTS_AND_SOLUTIONS_DDL = `
+const COMMENTS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
   id INTEGER PRIMARY KEY NOT NULL,
   injury_id INTEGER NOT NULL,
   body TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+`;
+
+const SOLUTIONS_DDL_LEGACY = `
 CREATE TABLE IF NOT EXISTS solutions (
   id INTEGER PRIMARY KEY NOT NULL,
   injury_id INTEGER NOT NULL,
@@ -16,6 +19,40 @@ CREATE TABLE IF NOT EXISTS solutions (
   url TEXT,
   created_at TEXT NOT NULL
 );
+`;
+
+const SOLUTIONS_DDL_V5 = `
+CREATE TABLE IF NOT EXISTS solutions (
+  id INTEGER PRIMARY KEY NOT NULL,
+  injury_id INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  url TEXT,
+  created_at TEXT NOT NULL,
+  removed_at TEXT
+);
+`;
+
+const INJURY_EVENTS_DDL = `
+CREATE TABLE IF NOT EXISTS injury_events (
+  id INTEGER PRIMARY KEY NOT NULL,
+  injury_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  solution_id INTEGER,
+  created_at TEXT NOT NULL
+);
+`;
+
+const V5_FROM_EXISTING = `
+ALTER TABLE solutions ADD COLUMN removed_at TEXT;
+${INJURY_EVENTS_DDL}
+INSERT INTO injury_events (injury_id, type, solution_id, created_at)
+  SELECT id, 'created', NULL, created_at FROM injuries;
+INSERT INTO injury_events (injury_id, type, solution_id, created_at)
+  SELECT id, 'archived', NULL, archived_at FROM injuries
+  WHERE status = 'archived' AND archived_at IS NOT NULL;
+INSERT INTO injury_events (injury_id, type, solution_id, created_at)
+  SELECT injury_id, 'solution_added', id, created_at FROM solutions;
+PRAGMA user_version = ${DATABASE_VERSION};
 `;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
@@ -37,9 +74,12 @@ CREATE TABLE IF NOT EXISTS injuries (
   description TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL,
-  limb TEXT
+  limb TEXT,
+  archived_at TEXT
 );
-${COMMENTS_AND_SOLUTIONS_DDL}
+${COMMENTS_DDL}
+${SOLUTIONS_DDL_V5}
+${INJURY_EVENTS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
     });
@@ -50,8 +90,10 @@ PRAGMA user_version = ${DATABASE_VERSION};
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
 ALTER TABLE injuries ADD COLUMN limb TEXT;
-${COMMENTS_AND_SOLUTIONS_DDL}
-PRAGMA user_version = ${DATABASE_VERSION};
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
+${COMMENTS_DDL}
+${SOLUTIONS_DDL_LEGACY}
+${V5_FROM_EXISTING}
 `);
     });
     return;
@@ -60,9 +102,28 @@ PRAGMA user_version = ${DATABASE_VERSION};
   if (currentDbVersion === 2) {
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
-${COMMENTS_AND_SOLUTIONS_DDL}
-PRAGMA user_version = ${DATABASE_VERSION};
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
+${COMMENTS_DDL}
+${SOLUTIONS_DDL_LEGACY}
+${V5_FROM_EXISTING}
 `);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 3) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+ALTER TABLE injuries ADD COLUMN archived_at TEXT;
+${V5_FROM_EXISTING}
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 4) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(V5_FROM_EXISTING);
     });
   }
 }

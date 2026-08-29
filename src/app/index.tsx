@@ -78,13 +78,34 @@ export default function OpenInjuriesScreen() {
         options={{
           title: 'Open injuries',
           headerRight: () => (
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={Spacing.two}
-              onPress={() => router.push('/landmarks')}
-              style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedText type="linkPrimary">Log injury</ThemedText>
-            </Pressable>
+            <ThemedView style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={Spacing.two}
+                onPress={() => {
+                  if (navigating.current) {
+                    return;
+                  }
+                  navigating.current = true;
+                  router.push('/archive');
+                }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText type="linkPrimary">Archive</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={Spacing.two}
+                onPress={() => {
+                  if (navigating.current) {
+                    return;
+                  }
+                  navigating.current = true;
+                  router.push('/landmarks');
+                }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText type="linkPrimary">Log injury</ThemedText>
+              </Pressable>
+            </ThemedView>
           ),
         }}
       />
@@ -288,6 +309,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.three,
   },
   segments: {
