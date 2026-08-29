@@ -36,7 +36,7 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Outcome:** User can open an injury, read description plus chronological comments and proposed solutions, add a comment or a text+URL solution, and tap a valid http(s) link to leave the app.
 - **Layers:** sqlite (comment, solution), injury detail UI, React Native `Linking`
 - **PRD:** G2 (solutions on open injuries), J2 (thread), FR-11, FR-12, FR-13, FR-17
-- **Status:** ready
+- **Status:** done
 - **Next:** `/11x-new injury-thread comments plus text-and-url solutions on an open injury`
 
 ### 4. Archive when healed, reopen on flare-up
@@ -95,3 +95,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 - 2026-08-29 — `body-graphic-map` → `context/archive/2026-08-25-body-graphic-map/`
 - 2026-08-29 — `export-backup` → `context/archive/2026-08-29-export-backup/`
 - 2026-08-29 — `injuries-history` → `context/archive/2026-08-29-injuries-history/`
+- 2026-08-29 — `injury-thread` → `context/archive/2026-08-29-injury-thread/`
