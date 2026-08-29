@@ -200,7 +200,7 @@ No test runner this slice (explicit, same as slices 1–2). Automated gate is `n
 
 #### Automated
 
-- [x] 3.1 `npx tsc --noEmit` passes
+- [x] 3.1 `npx tsc --noEmit` passes — 1656b62
 
 #### Manual
 

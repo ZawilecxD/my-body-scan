@@ -36,6 +36,7 @@ export default function OpenInjuriesScreen() {
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [latestSolutions, setLatestSolutions] = useState<Record<number, Solution>>({});
   const [error, setError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const navigating = useRef(false);
 
   useFocusEffect(
@@ -51,6 +52,7 @@ export default function OpenInjuriesScreen() {
           );
           if (!cancelled) {
             setError(null);
+            setLinkError(null);
             setInjuries(rows);
             setLatestSolutions(latest);
           }
@@ -158,6 +160,7 @@ export default function OpenInjuriesScreen() {
           </ThemedView>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
+            {linkError != null ? <ThemedText>{linkError}</ThemedText> : null}
             {groups.map((group) => (
               <ThemedView key={group.region} style={styles.section}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
@@ -203,7 +206,7 @@ export default function OpenInjuriesScreen() {
                                   return;
                                 }
                                 Linking.openURL(url).catch((caught: unknown) => {
-                                  setError(
+                                  setLinkError(
                                     caught instanceof Error
                                       ? caught.message
                                       : `Cannot open URL (${url})`,

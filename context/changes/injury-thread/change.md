@@ -2,7 +2,7 @@
 change_id: injury-thread
 title: Injury thread — comments and solutions
 type: feature
-status: implemented
+status: mr_ready
 created: 2026-08-29
 updated: 2026-08-29
 archived_at: null
