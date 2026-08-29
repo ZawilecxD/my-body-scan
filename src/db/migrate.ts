@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const DATABASE_VERSION = 5;
+export const DATABASE_VERSION = 5;
 
 const COMMENTS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
