@@ -144,9 +144,9 @@ No test runner (same as prior slices). Automated gate is `npx tsc --noEmit` only
 
 #### Automated
 
-- [x] 1.1 Domain window, overlap, text + HTML formatters
-- [x] 1.2 loadSummary db helper
-- [x] 1.3 tsc --noEmit passes
+- [x] 1.1 Domain window, overlap, text + HTML formatters — 3708d5c
+- [x] 1.2 loadSummary db helper — 3708d5c
+- [x] 1.3 tsc --noEmit passes — 3708d5c
 
 #### Manual
 
