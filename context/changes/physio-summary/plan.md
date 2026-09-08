@@ -156,9 +156,9 @@ No test runner (same as prior slices). Automated gate is `npx tsc --noEmit` only
 
 #### Automated
 
-- [x] 2.1 Summary screen config + generate + preview
-- [x] 2.2 Home Summary link, text share, expo-print PDF
-- [x] 2.3 tsc --noEmit passes
+- [x] 2.1 Summary screen config + generate + preview — a63d048
+- [x] 2.2 Home Summary link, text share, expo-print PDF — a63d048
+- [x] 2.3 tsc --noEmit passes — a63d048
 
 #### Manual
 
