@@ -85,7 +85,15 @@ Ordered wishlist after the Android MVP slices above. Each item is a **separate c
 - **Note:** Separate change from physio-summary; do not pull into §7.
 - **Next when ready:** `/11x-new app-i18n-en-pl English and Polish UI locale for the app`
 
-### 10. iOS
+### 10. UI rebrand
+
+- **Outcome:** The whole app UI is redesigned so it is readable, practical, and cohesive on Android — layout, typography, spacing, navigation chrome, and visual system — replacing the current look that feels poor and hard to use day to day.
+- **Why:** Product loops work, but presentation blocks dogfooding and any wider show. Polish before iOS so both platforms inherit one design system.
+- **Research first (before `/11x-new` implement):** which Expo/React Native component libraries fit (e.g. existing `@expo/ui` vs Tamagui / React Native Paper / NativeWind / others); which design tools, MCPs, and AI platforms can produce implementable screen designs (not just moodboards). Capture findings under `context/changes/<id>/research/` or foundation research when the change starts.
+- **Note:** Visual/UX only — no new product slices, no schema change unless a layout forces a tiny affordance. Keep iOS last (§11).
+- **Next when ready:** `/11x-new ui-rebrand redesign app UI for clarity and practical daily use`
+
+### 11. iOS
 
 - **Outcome:** Same product loop runs as a polished iOS build (Expo already supports 16.4+); store listing and platform polish as needed.
 - **Next when ready:** `/11x-new ios-port ship the MVP product loop on iOS`
