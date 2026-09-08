@@ -216,9 +216,9 @@ Home entry + list + create + detail with episodes and symptom tactics (Linking).
 
 #### Automated
 
-- [ ] 2.1 Home Illnesses link + list/create/detail screens
-- [ ] 2.2 Episodes and symptom tactics (incl. Linking) on detail
-- [ ] 2.3 `npx tsc --noEmit` exits 0
+- [x] 2.1 Home Illnesses link + list/create/detail screens — f785df0
+- [x] 2.2 Episodes and symptom tactics (incl. Linking) on detail — f785df0
+- [x] 2.3 `npx tsc --noEmit` exits 0 — f785df0
 
 #### Manual
 
