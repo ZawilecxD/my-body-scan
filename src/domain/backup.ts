@@ -1,3 +1,4 @@
+import type { Illness, IllnessEpisode, SymptomTactic } from '@/domain/illness';
 import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
 
 export type BackupPayload = {
@@ -9,4 +10,7 @@ export type BackupPayload = {
   solutions: Solution[];
   events: InjuryEvent[];
   readings: SeverityReading[];
+  illnesses: Illness[];
+  episodes: IllnessEpisode[];
+  tactics: SymptomTactic[];
 };
