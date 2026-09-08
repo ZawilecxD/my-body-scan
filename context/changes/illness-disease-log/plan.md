@@ -203,10 +203,10 @@ Home entry + list + create + detail with episodes and symptom tactics (Linking).
 
 #### Automated
 
-- [ ] 1.1 Schema v7 migration with illness tables on all paths
-- [ ] 1.2 Domain types + illnesses/episodes/tactics db modules
-- [ ] 1.3 Backup dump/parse/replace for illnesses, episodes, tactics
-- [ ] 1.4 `npx tsc --noEmit` exits 0
+- [x] 1.1 Schema v7 migration with illness tables on all paths — a38d950
+- [x] 1.2 Domain types + illnesses/episodes/tactics db modules — a38d950
+- [x] 1.3 Backup dump/parse/replace for illnesses, episodes, tactics — a38d950
+- [x] 1.4 `npx tsc --noEmit` exits 0 — a38d950
 
 #### Manual
 

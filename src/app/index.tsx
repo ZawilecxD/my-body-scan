@@ -87,6 +87,19 @@ export default function OpenInjuriesScreen() {
                     return;
                   }
                   navigating.current = true;
+                  router.push('/illnesses');
+                }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText type="linkPrimary">Illnesses</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={Spacing.two}
+                onPress={() => {
+                  if (navigating.current) {
+                    return;
+                  }
+                  navigating.current = true;
                   router.push('/summary');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
