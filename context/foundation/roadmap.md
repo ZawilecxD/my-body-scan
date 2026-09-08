@@ -70,7 +70,21 @@ Ordered wishlist after the Android MVP slices above. Each item is a **separate c
 - **Depends on:** export format from slice 5 helps; severity from slice 6 is optional enrichment.
 - **Next when ready:** `/11x-new physio-summary shareable status summary for a physio`
 
-### 8. iOS
+### 8. Illness & disease log
+
+- **Outcome:** User can log illnesses that are not body-landmark injuries — colds, internal infections, chronic diseases, and similar — see how often episodes recur, and keep user-authored tactics for treating symptoms (text + optional links), without the app diagnosing or advising treatment.
+- **Why:** Injuries answer “where on the body”; this covers whole-body / systemic issues the map cannot pin. Frequency + personal tactics close the same “what worked last time” gap for colds and chronic conditions.
+- **Note:** Separate from the injury landmark model; may reuse thread/solutions patterns. Still no diagnosis, AI advice, or medical-device framing (Parked).
+- **Next when ready:** `/11x-new illness-disease-log log illnesses and chronic conditions with episode frequency and symptom tactics`
+
+### 9. App i18n (EN / PL)
+
+- **Outcome:** User can run the app UI in English or Polish (device or in-app locale), including chrome on future shareable summaries — user-authored injury text stays as written.
+- **Why:** First production user and later users are PL/EN; summary export (§7) ships English-only until this lands.
+- **Note:** Separate change from physio-summary; do not pull into §7.
+- **Next when ready:** `/11x-new app-i18n-en-pl English and Polish UI locale for the app`
+
+### 10. iOS
 
 - **Outcome:** Same product loop runs as a polished iOS build (Expo already supports 16.4+); store listing and platform polish as needed.
 - **Next when ready:** `/11x-new ios-port ship the MVP product loop on iOS`
