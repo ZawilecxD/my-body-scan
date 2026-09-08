@@ -150,7 +150,7 @@ No test runner (same as prior slices). Automated gate is `npx tsc --noEmit` only
 
 #### Manual
 
-- [ ] 1.4 Spot-check overlap / section flags (no UI)
+- [x] 1.4 Spot-check overlap / section flags (no UI)
 
 ### Phase 2: `/summary` screen, share, PDF
 
@@ -162,4 +162,4 @@ No test runner (same as prior slices). Automated gate is `npx tsc --noEmit` only
 
 #### Manual
 
-- [ ] 2.4 Device: defaults, toggles, empty, share, PDF matches preview, no double-push
+- [x] 2.4 Device: defaults, toggles, empty, share, PDF matches preview, no double-push
