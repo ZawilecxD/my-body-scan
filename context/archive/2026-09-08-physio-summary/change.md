@@ -2,10 +2,10 @@
 change_id: physio-summary
 title: Shareable status summary for a physio
 type: feature
-status: implemented
+status: archived
 created: 2026-09-08
 updated: 2026-09-08
-archived_at: null
+archived_at: 2026-09-08T14:14:27Z
 ---
 
 ## Notes

@@ -68,6 +68,7 @@ Ordered wishlist after the Android MVP slices above. Each item is a **separate c
 
 - **Outcome:** User can produce a one-way shareable summary (e.g. PDF or share sheet) of open injuries and latest solutions for a physio — no accounts or multi-user sync.
 - **Depends on:** export format from slice 5 helps; severity from slice 6 is optional enrichment.
+- **Status:** done
 - **Next when ready:** `/11x-new physio-summary shareable status summary for a physio`
 
 ### 8. Illness & disease log
@@ -112,3 +113,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 - 2026-08-29 — `injuries-history` → `context/archive/2026-08-29-injuries-history/`
 - 2026-08-29 — `injury-thread` → `context/archive/2026-08-29-injury-thread/`
 - 2026-09-08 — `severity-trend` → `context/archive/2026-08-29-severity-trend/`
+- 2026-09-08 — `physio-summary` → `context/archive/2026-09-08-physio-summary/`
