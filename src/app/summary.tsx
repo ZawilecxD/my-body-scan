@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
@@ -86,11 +87,20 @@ export default function SummaryScreen() {
     setError(null);
 
     try {
+      // printToFileAsync URI is often outside Sharing's FileProvider roots on Android.
+      // Copy into Paths.cache (same pattern as backup export) before shareAsync.
       const { uri } = await Print.printToFileAsync({ html: previewHtml });
+      const stamp = formatFileStamp(new Date());
+      const shareFile = new File(Paths.cache, `physio-summary-${stamp}.pdf`);
+      if (shareFile.exists) {
+        shareFile.delete();
+      }
+      new File(uri).copy(shareFile);
+
       if (!(await Sharing.isAvailableAsync())) {
         throw new Error('Sharing is not available on this device');
       }
-      await Sharing.shareAsync(uri, {
+      await Sharing.shareAsync(shareFile.uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Physio summary',
         UTI: '.pdf',
@@ -308,3 +318,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+
+function formatFileStamp(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
