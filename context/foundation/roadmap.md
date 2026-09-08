@@ -61,6 +61,7 @@ Ordered wishlist after the Android MVP slices above. Each item is a **separate c
 ### 6. Severity trend
 
 - **Outcome:** User can record a simple severity/pain reading over time on an injury and see the trend without the app diagnosing or advising treatment.
+- **Status:** done
 - **Next when ready:** `/11x-new severity-trend severity readings over time on an injury`
 
 ### 7. Physio-ready summary
@@ -96,3 +97,4 @@ Catalog trim (§5) is allowed at plan time; do not expand. Default FR-16 (reopen
 - 2026-08-29 — `export-backup` → `context/archive/2026-08-29-export-backup/`
 - 2026-08-29 — `injuries-history` → `context/archive/2026-08-29-injuries-history/`
 - 2026-08-29 — `injury-thread` → `context/archive/2026-08-29-injury-thread/`
+- 2026-09-08 — `severity-trend` → `context/archive/2026-08-29-severity-trend/`
