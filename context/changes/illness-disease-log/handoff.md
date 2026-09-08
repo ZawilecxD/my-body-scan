@@ -5,7 +5,7 @@ Status: mr_ready
 
 No project git/MR skill or MCP is configured. Paste this file as the MR body.
 
-Commits on `main` (ahead of origin): `a38d950`, `f785df0` (+ docs stamp commit below if present).
+Commits on `main` (ahead of origin): `a38d950`, `f785df0`, `c03bce4`.
 
 **After you accept and merge/push to main:** run `/11x-archive illness-disease-log`.
 
