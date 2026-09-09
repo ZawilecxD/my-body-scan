@@ -1,12 +1,14 @@
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Tabs, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useCallback, useRef, useState, type MutableRefObject } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BodyOverviewMap } from '@/components/body-overview-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { IconButton } from '@/components/ui';
+import { Radii, Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import { listLatestSolutionsByInjuryIds } from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
@@ -26,6 +28,48 @@ import {
 import { useTheme } from '@/hooks/use-theme';
 
 type HomeView = 'graphic' | 'list';
+
+function InjuriesHeaderActions({ navigating }: { navigating: MutableRefObject<boolean> }) {
+  const router = useRouter();
+  const theme = useTheme();
+
+  return (
+    <View style={styles.headerActions}>
+      <IconButton
+        accessibilityLabel="Summary"
+        onPress={() => {
+          if (navigating.current) {
+            return;
+          }
+          navigating.current = true;
+          router.push('/summary');
+        }}>
+        <SymbolView
+          name={{ ios: 'doc.text', android: 'description', web: 'description' }}
+          size={22}
+          tintColor={theme.primary}
+          fallback={<ThemedText type="linkPrimary">Σ</ThemedText>}
+        />
+      </IconButton>
+      <IconButton
+        accessibilityLabel="Backup"
+        onPress={() => {
+          if (navigating.current) {
+            return;
+          }
+          navigating.current = true;
+          router.push('/backup');
+        }}>
+        <SymbolView
+          name={{ ios: 'externaldrive', android: 'backup', web: 'backup' }}
+          size={22}
+          tintColor={theme.primary}
+          fallback={<ThemedText type="linkPrimary">⇪</ThemedText>}
+        />
+      </IconButton>
+    </View>
+  );
+}
 
 export default function OpenInjuriesScreen() {
   const db = useSQLiteContext();
@@ -72,80 +116,20 @@ export default function OpenInjuriesScreen() {
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
   const openCounts = countOpenByZone(injuries ?? [], side);
 
+  const openLogInjury = () => {
+    if (navigating.current) {
+      return;
+    }
+    navigating.current = true;
+    router.push('/landmarks');
+  };
+
   return (
     <>
-      <Stack.Screen
+      <Tabs.Screen
         options={{
-          title: 'Open injuries',
-          headerRight: () => (
-            <ThemedView style={styles.headerActions}>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={Spacing.two}
-                onPress={() => {
-                  if (navigating.current) {
-                    return;
-                  }
-                  navigating.current = true;
-                  router.push('/illnesses');
-                }}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Illnesses</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={Spacing.two}
-                onPress={() => {
-                  if (navigating.current) {
-                    return;
-                  }
-                  navigating.current = true;
-                  router.push('/summary');
-                }}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Summary</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={Spacing.two}
-                onPress={() => {
-                  if (navigating.current) {
-                    return;
-                  }
-                  navigating.current = true;
-                  router.push('/backup');
-                }}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Backup</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={Spacing.two}
-                onPress={() => {
-                  if (navigating.current) {
-                    return;
-                  }
-                  navigating.current = true;
-                  router.push('/archive');
-                }}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Archive</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={Spacing.two}
-                onPress={() => {
-                  if (navigating.current) {
-                    return;
-                  }
-                  navigating.current = true;
-                  router.push('/landmarks');
-                }}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Log injury</ThemedText>
-              </Pressable>
-            </ThemedView>
-          ),
+          title: 'Injuries',
+          headerRight: () => <InjuriesHeaderActions navigating={navigating} />,
         }}
       />
       <ThemedView style={styles.screen}>
@@ -213,7 +197,7 @@ export default function OpenInjuriesScreen() {
             <ThemedText>No open injuries yet.</ThemedText>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/landmarks')}
+              onPress={openLogInjury}
               style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
               <ThemedText type="linkPrimary">Log injury</ThemedText>
             </Pressable>
@@ -286,6 +270,33 @@ export default function OpenInjuriesScreen() {
             ))}
           </ScrollView>
         )}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Log injury"
+          onPress={openLogInjury}
+          style={({ pressed }) => [
+            styles.fab,
+            {
+              backgroundColor: theme.primaryContainer,
+              bottom: Spacing.spaceMd,
+            },
+            pressed && styles.fabPressed,
+          ]}>
+          <SymbolView
+            name={{ ios: 'plus', android: 'add', web: 'add' }}
+            size={20}
+            tintColor={theme.onPrimary}
+            fallback={
+              <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
+                +
+              </ThemedText>
+            }
+          />
+          <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
+            Log injury
+          </ThemedText>
+        </Pressable>
       </ThemedView>
     </>
   );
@@ -349,11 +360,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.three,
     gap: Spacing.three,
+    paddingBottom: Spacing.six,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.one,
   },
   segments: {
     flexDirection: 'row',
@@ -392,6 +404,20 @@ const styles = StyleSheet.create({
   cta: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
+  },
+  fab: {
+    position: 'absolute',
+    right: Spacing.spaceMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.spaceXs,
+    paddingHorizontal: Spacing.spaceLg,
+    paddingVertical: Spacing.spaceSm,
+    borderRadius: Radii.full,
+  },
+  fabPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
   pressed: {
     opacity: 0.7,

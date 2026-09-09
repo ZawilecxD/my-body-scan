@@ -1,4 +1,4 @@
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Tabs, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -43,7 +43,7 @@ export default function ArchiveScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Archive' }} />
+      <Tabs.Screen options={{ title: 'Archive' }} />
       <ThemedView style={styles.screen}>
         {error != null ? (
           <ThemedText>{error}</ThemedText>

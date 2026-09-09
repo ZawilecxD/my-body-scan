@@ -19,6 +19,10 @@ import { migrate } from '@/db/migrate';
 
 SplashScreen.preventAutoHideAsync();
 
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
+
 async function onInit(db: SQLiteDatabase) {
   try {
     await migrate(db);
@@ -68,7 +72,20 @@ export default function RootLayout() {
         </ThemedView>
       ) : (
         <SQLiteProvider databaseName="my-body-scan.db" onInit={onInit} onError={setDbError}>
-          {fontsReady ? <Stack /> : null}
+          {fontsReady ? (
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="map/[region]" />
+              <Stack.Screen name="injuries/[id]" />
+              <Stack.Screen name="injuries/new" />
+              <Stack.Screen name="landmarks/index" />
+              <Stack.Screen name="landmarks/[id]" />
+              <Stack.Screen name="illnesses/new" />
+              <Stack.Screen name="illnesses/[id]" />
+              <Stack.Screen name="summary" />
+              <Stack.Screen name="backup" />
+            </Stack>
+          ) : null}
         </SQLiteProvider>
       )}
     </ThemeProvider>
