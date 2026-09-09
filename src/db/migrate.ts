@@ -1,6 +1,9 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 7;
+export const DATABASE_VERSION = 8;
+
+/** Backup JSON payload shape; independent of on-device DB version when settings-only. */
+export const BACKUP_SCHEMA_VERSION = 7;
 
 const COMMENTS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
@@ -79,6 +82,13 @@ CREATE TABLE IF NOT EXISTS symptom_tactics (
 );
 `;
 
+const APP_SETTINGS_DDL = `
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+`;
+
 /** V5 shape only — no user_version stamp. */
 const V5_SCHEMA_FROM_EXISTING = `
 ALTER TABLE solutions ADD COLUMN removed_at TEXT;
@@ -97,10 +107,16 @@ const V6_SCHEMA_FROM_V5 = `
 ${SEVERITY_READINGS_DDL}
 `;
 
+/** V7 shape only — literal stamp 7 so catch-up can still run V8. */
 const V7_FROM_V6 = `
 ${ILLNESSES_DDL}
 ${ILLNESS_EPISODES_DDL}
 ${SYMPTOM_TACTICS_DDL}
+PRAGMA user_version = 7;
+`;
+
+const V8_FROM_V7 = `
+${APP_SETTINGS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `;
 
@@ -133,6 +149,7 @@ ${SEVERITY_READINGS_DDL}
 ${ILLNESSES_DDL}
 ${ILLNESS_EPISODES_DDL}
 ${SYMPTOM_TACTICS_DDL}
+${APP_SETTINGS_DDL}
 PRAGMA user_version = ${DATABASE_VERSION};
 `);
     });
@@ -149,6 +166,7 @@ ${SOLUTIONS_DDL_LEGACY}
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
 ${V7_FROM_V6}
+${V8_FROM_V7}
 `);
     });
     return;
@@ -163,6 +181,7 @@ ${SOLUTIONS_DDL_LEGACY}
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
 ${V7_FROM_V6}
+${V8_FROM_V7}
 `);
     });
     return;
@@ -175,6 +194,7 @@ ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
 ${V7_FROM_V6}
+${V8_FROM_V7}
 `);
     });
     return;
@@ -186,6 +206,7 @@ ${V7_FROM_V6}
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
 ${V7_FROM_V6}
+${V8_FROM_V7}
 `);
     });
     return;
@@ -196,6 +217,7 @@ ${V7_FROM_V6}
       await db.execAsync(`
 ${V6_SCHEMA_FROM_V5}
 ${V7_FROM_V6}
+${V8_FROM_V7}
 `);
     });
     return;
@@ -203,7 +225,17 @@ ${V7_FROM_V6}
 
   if (currentDbVersion === 6) {
     await db.withTransactionAsync(async () => {
-      await db.execAsync(V7_FROM_V6);
+      await db.execAsync(`
+${V7_FROM_V6}
+${V8_FROM_V7}
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 7) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(V8_FROM_V7);
     });
   }
 }

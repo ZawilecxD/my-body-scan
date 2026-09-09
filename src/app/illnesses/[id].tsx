@@ -12,6 +12,7 @@ import { createSymptomTactic, listSymptomTacticsForIllness } from '@/db/tactics'
 import { isHttpUrl } from '@/domain/http-url';
 import type { Illness, IllnessEpisode, SymptomTactic } from '@/domain/illness';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function IllnessDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -20,6 +21,8 @@ export default function IllnessDetailScreen() {
 
   const db = useSQLiteContext();
   const theme = useTheme();
+  const { t, resolvedLocale } = useLocale();
+  const dateLocale = resolvedLocale === 'pl' ? 'pl-PL' : 'en-US';
   const [illness, setIllness] = useState<Illness | null | undefined>(undefined);
   const [episodes, setEpisodes] = useState<IllnessEpisode[]>([]);
   const [tactics, setTactics] = useState<SymptomTactic[]>([]);
@@ -32,7 +35,7 @@ export default function IllnessDetailScreen() {
   useEffect(() => {
     if (Number.isNaN(id)) {
       setIllness(null);
-      setError(`Cannot open illness: invalid id "${idValue ?? ''}"`);
+      setError(t('illnesses.openInvalidId', { id: idValue ?? '' }));
       return;
     }
 
@@ -44,7 +47,7 @@ export default function IllnessDetailScreen() {
         }
         if (loaded.illness == null) {
           setIllness(null);
-          setError(`Cannot open illness: not found (${id})`);
+          setError(t('illnesses.openNotFound', { id }));
           return;
         }
         setError(null);
@@ -55,14 +58,16 @@ export default function IllnessDetailScreen() {
       .catch((caught: unknown) => {
         if (!cancelled) {
           setIllness(null);
-          setError(caught instanceof Error ? caught.message : `Cannot open illness ${id}`);
+          setError(
+            caught instanceof Error ? caught.message : t('illnesses.openFailed', { id }),
+          );
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [db, id, idValue]);
+  }, [db, id, idValue, t]);
 
   const trimmedTactic = tacticBody.trim();
 
@@ -77,7 +82,7 @@ export default function IllnessDetailScreen() {
       setEpisodes(nextEpisodes);
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot log episode');
+      setError(caught instanceof Error ? caught.message : t('illnesses.episodeError'));
     } finally {
       addingEpisode.current = false;
     }
@@ -100,7 +105,7 @@ export default function IllnessDetailScreen() {
       setTacticUrl('');
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add symptom tactic');
+      setError(caught instanceof Error ? caught.message : t('illnesses.tacticError'));
     } finally {
       addingTactic.current = false;
     }
@@ -113,18 +118,18 @@ export default function IllnessDetailScreen() {
     try {
       await Linking.openURL(url);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : `Cannot open URL (${url})`);
+      setError(caught instanceof Error ? caught.message : t('illnesses.openUrlError', { url }));
     }
   }
 
   return (
     <>
-      <Stack.Screen options={{ title: illness?.name ?? 'Illness' }} />
+      <Stack.Screen options={{ title: illness?.name ?? t('illnesses.detailFallback') }} />
       <ThemedView style={styles.screen}>
         {illness === undefined ? null : error != null && illness == null ? (
           <ThemedText>{error}</ThemedText>
         ) : illness == null ? (
-          <ThemedText>{error ?? 'Cannot open illness.'}</ThemedText>
+          <ThemedText>{error ?? t('illnesses.openError')}</ThemedText>
         ) : (
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -132,22 +137,24 @@ export default function IllnessDetailScreen() {
             <ThemedText type="smallBold">{illness.name}</ThemedText>
             {illness.notes != null ? <ThemedText>{illness.notes}</ThemedText> : null}
             <ThemedText type="small" themeColor="textSecondary">
-              Logged {new Date(illness.createdAt).toLocaleString()}
+              {t('illnesses.loggedAt', {
+                date: new Date(illness.createdAt).toLocaleString(dateLocale),
+              })}
             </ThemedText>
             {error != null ? <ThemedText>{error}</ThemedText> : null}
 
             <ThemedText type="smallBold">
-              Episodes ({episodes.length})
+              {t('illnesses.episodes')} ({episodes.length})
             </ThemedText>
             {episodes.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
-                No episodes yet.
+                {t('illnesses.emptyEpisodes')}
               </ThemedText>
             ) : (
               episodes.map((episode) => (
                 <ThemedView key={episode.id} type="backgroundElement" style={styles.card}>
                   <ThemedText type="small">
-                    {new Date(episode.notedAt).toLocaleString()}
+                    {new Date(episode.notedAt).toLocaleString(dateLocale)}
                   </ThemedText>
                 </ThemedView>
               ))
@@ -160,32 +167,32 @@ export default function IllnessDetailScreen() {
                 { backgroundColor: theme.backgroundSelected },
                 pressed && styles.pressed,
               ]}>
-              <ThemedText type="smallBold">Log episode</ThemedText>
+              <ThemedText type="smallBold">{t('illnesses.logEpisode')}</ThemedText>
             </Pressable>
 
-            <ThemedText type="smallBold">Symptom tactics</ThemedText>
+            <ThemedText type="smallBold">{t('illnesses.tactics')}</ThemedText>
             {tactics.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
-                No symptom tactics yet.
+                {t('illnesses.emptyTactics')}
               </ThemedText>
             ) : (
               tactics.map((tactic) => (
                 <ThemedView key={tactic.id} type="backgroundElement" style={styles.card}>
                   <ThemedText>{tactic.body}</ThemedText>
                   {tactic.url != null && isHttpUrl(tactic.url) ? (
-                    <TacticLink url={tactic.url} onOpen={onOpenUrl} />
+                    <TacticLink url={tactic.url} onOpen={onOpenUrl} openLabel={t('common.openLink')} />
                   ) : null}
                   <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(tactic.createdAt).toLocaleString()}
+                    {new Date(tactic.createdAt).toLocaleString(dateLocale)}
                   </ThemedText>
                 </ThemedView>
               ))
             )}
             <ThemedText type="small" themeColor="textSecondary">
-              Add symptom tactic
+              {t('illnesses.addTactic')}
             </ThemedText>
             <TextInput
-              accessibilityLabel="Symptom tactic"
+              accessibilityLabel={t('illnesses.tacticLabel')}
               multiline
               textAlignVertical="top"
               value={tacticBody}
@@ -200,10 +207,10 @@ export default function IllnessDetailScreen() {
               ]}
             />
             <ThemedText type="small" themeColor="textSecondary">
-              URL (optional)
+              {t('illnesses.urlOptional')}
             </ThemedText>
             <TextInput
-              accessibilityLabel="URL (optional)"
+              accessibilityLabel={t('illnesses.urlOptional')}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
@@ -226,7 +233,7 @@ export default function IllnessDetailScreen() {
                 { backgroundColor: theme.backgroundSelected },
                 (trimmedTactic.length === 0 || pressed) && styles.pressed,
               ]}>
-              <ThemedText type="smallBold">Add tactic</ThemedText>
+              <ThemedText type="smallBold">{t('illnesses.addTactic')}</ThemedText>
             </Pressable>
           </ScrollView>
         )}
@@ -235,13 +242,21 @@ export default function IllnessDetailScreen() {
   );
 }
 
-function TacticLink({ url, onOpen }: { url: string; onOpen: (url: string) => void }) {
+function TacticLink({
+  url,
+  onOpen,
+  openLabel,
+}: {
+  url: string;
+  onOpen: (url: string) => void;
+  openLabel: string;
+}) {
   return (
     <Pressable
       accessibilityRole="link"
       onPress={() => onOpen(url)}
       style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedText type="linkPrimary">Open link</ThemedText>
+      <ThemedText type="linkPrimary">{openLabel}</ThemedText>
     </Pressable>
   );
 }

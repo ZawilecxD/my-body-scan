@@ -20,10 +20,12 @@ import {
   type SummaryConfig,
 } from '@/domain/summary';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function SummaryScreen() {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const { t, resolvedLocale } = useLocale();
   const [config, setConfig] = useState<SummaryConfig>(DEFAULT_SUMMARY_CONFIG);
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -48,13 +50,13 @@ export default function SummaryScreen() {
 
     try {
       const now = new Date();
-      const document = await loadSummary(db, config, now);
-      setPreviewText(formatSummaryText(document));
-      setPreviewHtml(formatSummaryHtml(document));
+      const document = await loadSummary(db, config, now, t);
+      setPreviewText(formatSummaryText(document, t, resolvedLocale));
+      setPreviewHtml(formatSummaryHtml(document, t, resolvedLocale));
     } catch (caught: unknown) {
       setPreviewText(null);
       setPreviewHtml(null);
-      setError(caught instanceof Error ? caught.message : 'Cannot generate summary');
+      setError(caught instanceof Error ? caught.message : t('summary.generateError'));
     } finally {
       generating.current = false;
     }
@@ -70,10 +72,10 @@ export default function SummaryScreen() {
     try {
       await Share.share({
         message: previewText,
-        title: 'Physio summary',
+        title: t('summary.physioTitle'),
       });
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot share summary');
+      setError(caught instanceof Error ? caught.message : t('summary.shareError'));
     } finally {
       sharingText.current = false;
     }
@@ -98,15 +100,15 @@ export default function SummaryScreen() {
       new File(uri).copy(shareFile);
 
       if (!(await Sharing.isAvailableAsync())) {
-        throw new Error('Sharing is not available on this device');
+        throw new Error(t('common.sharingUnavailable'));
       }
       await Sharing.shareAsync(shareFile.uri, {
         mimeType: 'application/pdf',
-        dialogTitle: 'Physio summary',
+        dialogTitle: t('summary.physioTitle'),
         UTI: '.pdf',
       });
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot share PDF');
+      setError(caught instanceof Error ? caught.message : t('summary.pdfError'));
     } finally {
       sharingPdf.current = false;
     }
@@ -116,19 +118,17 @@ export default function SummaryScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Summary' }} />
+      <Stack.Screen options={{ title: t('summary.title') }} />
       <ThemedView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText themeColor="textSecondary">
-            Build an English briefing for a physio visit. Generate to preview, then share as text or PDF.
-          </ThemedText>
+          <ThemedText themeColor="textSecondary">{t('summary.blurb')}</ThemedText>
 
-          <ThemedText type="smallBold">Time window</ThemedText>
+          <ThemedText type="smallBold">{t('summary.timeWindow')}</ThemedText>
           <ThemedView style={styles.wrapRow}>
             {SUMMARY_WINDOW_PRESETS.map((preset) => (
               <OptionChip
                 key={preset}
-                label={windowPresetLabel(preset)}
+                label={windowPresetLabel(preset, t)}
                 selected={config.windowPreset === preset}
                 selectedBackground={theme.backgroundSelected}
                 onPress={() => updateConfig({ windowPreset: preset })}
@@ -136,40 +136,40 @@ export default function SummaryScreen() {
             ))}
           </ThemedView>
 
-          <ThemedText type="smallBold">Status scope</ThemedText>
+          <ThemedText type="smallBold">{t('summary.statusScope')}</ThemedText>
           <ThemedView style={styles.wrapRow}>
             <OptionChip
-              label={statusScopeLabel(false)}
+              label={statusScopeLabel(false, t)}
               selected={!config.includeArchived}
               selectedBackground={theme.backgroundSelected}
               onPress={() => updateConfig({ includeArchived: false })}
             />
             <OptionChip
-              label={statusScopeLabel(true)}
+              label={statusScopeLabel(true, t)}
               selected={config.includeArchived}
               selectedBackground={theme.backgroundSelected}
               onPress={() => updateConfig({ includeArchived: true })}
             />
           </ThemedView>
 
-          <ThemedText type="smallBold">Sections</ThemedText>
+          <ThemedText type="smallBold">{t('summary.sections')}</ThemedText>
           <CheckboxRow
-            label="Description"
+            label={t('summary.description')}
             checked={config.includeDescription}
             onPress={() => updateConfig({ includeDescription: !config.includeDescription })}
           />
           <CheckboxRow
-            label="Latest severity"
+            label={t('summary.latestSeverity')}
             checked={config.includeLatestSeverity}
             onPress={() => updateConfig({ includeLatestSeverity: !config.includeLatestSeverity })}
           />
           <CheckboxRow
-            label="Solutions"
+            label={t('summary.solutions')}
             checked={config.includeSolutions}
             onPress={() => updateConfig({ includeSolutions: !config.includeSolutions })}
           />
           <CheckboxRow
-            label="Comments"
+            label={t('summary.comments')}
             checked={config.includeComments}
             onPress={() => updateConfig({ includeComments: !config.includeComments })}
           />
@@ -182,7 +182,7 @@ export default function SummaryScreen() {
               { backgroundColor: theme.backgroundSelected },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold">Generate</ThemedText>
+            <ThemedText type="smallBold">{t('summary.generate')}</ThemedText>
           </Pressable>
 
           <ThemedView style={styles.actionRow}>
@@ -196,7 +196,7 @@ export default function SummaryScreen() {
                 { backgroundColor: theme.backgroundSelected, opacity: canShare ? 1 : 0.4 },
                 pressed && canShare && styles.pressed,
               ]}>
-              <ThemedText type="smallBold">Share text</ThemedText>
+              <ThemedText type="smallBold">{t('summary.shareText')}</ThemedText>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -208,7 +208,7 @@ export default function SummaryScreen() {
                 { backgroundColor: theme.backgroundSelected, opacity: canShare ? 1 : 0.4 },
                 pressed && canShare && styles.pressed,
               ]}>
-              <ThemedText type="smallBold">Share PDF</ThemedText>
+              <ThemedText type="smallBold">{t('summary.sharePdf')}</ThemedText>
             </Pressable>
           </ThemedView>
 
@@ -216,7 +216,7 @@ export default function SummaryScreen() {
 
           {previewText != null ? (
             <ThemedView type="backgroundElement" style={styles.preview}>
-              <ThemedText type="smallBold">Preview</ThemedText>
+              <ThemedText type="smallBold">{t('summary.preview')}</ThemedText>
               <ThemedText>{previewText}</ThemedText>
             </ThemedView>
           ) : null}

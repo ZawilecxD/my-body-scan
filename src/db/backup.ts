@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { DATABASE_VERSION } from '@/db/migrate';
+import { BACKUP_SCHEMA_VERSION } from '@/db/migrate';
 import type { BackupPayload } from '@/domain/backup';
 import type { Illness, IllnessEpisode, SymptomTactic } from '@/domain/illness';
 import type {
@@ -105,7 +105,7 @@ export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
 
   return {
     formatVersion: 1,
-    schemaVersion: DATABASE_VERSION,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     injuries: injuryRows.map(mapInjuryRow),
     comments: commentRows.map(mapCommentRow),
@@ -135,9 +135,9 @@ export function parseBackupJson(text: string): BackupPayload {
   if (record.formatVersion !== 1) {
     throw new Error(`Cannot parse backup: unsupported formatVersion (${String(record.formatVersion)})`);
   }
-  if (record.schemaVersion !== DATABASE_VERSION) {
+  if (record.schemaVersion !== BACKUP_SCHEMA_VERSION) {
     throw new Error(
-      `Cannot parse backup: schemaVersion ${String(record.schemaVersion)} does not match app schema ${DATABASE_VERSION}`,
+      `Cannot parse backup: schemaVersion ${String(record.schemaVersion)} does not match app schema ${BACKUP_SCHEMA_VERSION}`,
     );
   }
   if (typeof record.exportedAt !== 'string' || record.exportedAt.length === 0) {
@@ -179,7 +179,7 @@ export function parseBackupJson(text: string): BackupPayload {
 
   return {
     formatVersion: 1,
-    schemaVersion: DATABASE_VERSION,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt: record.exportedAt,
     injuries,
     comments,
@@ -303,9 +303,9 @@ function assertPayloadReadyForReplace(payload: BackupPayload): void {
   if (payload.formatVersion !== 1) {
     throw new Error(`Cannot restore backup: unsupported formatVersion (${payload.formatVersion})`);
   }
-  if (payload.schemaVersion !== DATABASE_VERSION) {
+  if (payload.schemaVersion !== BACKUP_SCHEMA_VERSION) {
     throw new Error(
-      `Cannot restore backup: schemaVersion ${payload.schemaVersion} does not match app schema ${DATABASE_VERSION}`,
+      `Cannot restore backup: schemaVersion ${payload.schemaVersion} does not match app schema ${BACKUP_SCHEMA_VERSION}`,
     );
   }
 

@@ -19,8 +19,10 @@ import {
 } from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
 import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
-import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
+import { formatLandmarkLabel, getLandmarkById, landmarkName } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
+import type { TranslateFn } from '@/i18n';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function InjuryDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -30,6 +32,8 @@ export default function InjuryDetailScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { t, resolvedLocale } = useLocale();
+  const dateLocale = resolvedLocale === 'pl' ? 'pl-PL' : 'en-US';
   const [injury, setInjury] = useState<Injury | null | undefined>(undefined);
   const [comments, setComments] = useState<Comment[]>([]);
   const [solutions, setSolutions] = useState<Solution[]>([]);
@@ -50,19 +54,19 @@ export default function InjuryDetailScreen() {
   useEffect(() => {
     if (Number.isNaN(id)) {
       setInjury(null);
-      setError(`Cannot open injury: invalid id "${idValue ?? ''}"`);
+      setError(t('injury.openInvalidId', { id: idValue ?? '' }));
       return;
     }
 
     let cancelled = false;
-    loadThread(db, id)
+    loadThread(db, id, t)
       .then((loaded) => {
         if (cancelled) {
           return;
         }
         if (loaded.injury == null) {
           setInjury(null);
-          setError(`Cannot open injury: not found (${id})`);
+          setError(t('injury.openNotFound', { id }));
           return;
         }
         setError(null);
@@ -76,14 +80,14 @@ export default function InjuryDetailScreen() {
       .catch((caught: unknown) => {
         if (!cancelled) {
           setInjury(null);
-          setError(caught instanceof Error ? caught.message : `Cannot open injury ${id}`);
+          setError(caught instanceof Error ? caught.message : t('injury.openFailed', { id }));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [db, id, idValue]);
+  }, [db, id, idValue, t]);
 
   const landmark = injury == null ? undefined : getLandmarkById(injury.landmarkId);
   const trimmedComment = commentBody.trim();
@@ -97,7 +101,7 @@ export default function InjuryDetailScreen() {
       listSolutionsForInjury(db, id),
       listEventsForInjury(db, id),
     ]);
-    const labels = await labelsForEvents(db, nextEvents);
+    const labels = await labelsForEvents(db, nextEvents, t);
     setSolutions(nextSolutions);
     setEvents(nextEvents);
     setEventLabels(labels);
@@ -115,7 +119,7 @@ export default function InjuryDetailScreen() {
       setCommentBody('');
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add comment');
+      setError(caught instanceof Error ? caught.message : t('injury.commentError'));
     } finally {
       addingComment.current = false;
     }
@@ -133,7 +137,7 @@ export default function InjuryDetailScreen() {
       setSolutionUrl('');
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add solution');
+      setError(caught instanceof Error ? caught.message : t('injury.solutionError'));
     } finally {
       addingSolution.current = false;
     }
@@ -151,7 +155,7 @@ export default function InjuryDetailScreen() {
       setSeverityText('');
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add severity reading');
+      setError(caught instanceof Error ? caught.message : t('injury.severityError'));
     } finally {
       addingReading.current = false;
     }
@@ -167,7 +171,7 @@ export default function InjuryDetailScreen() {
       await reloadSolutionsAndEvents();
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot remove solution');
+      setError(caught instanceof Error ? caught.message : t('injury.removeSolutionError'));
     } finally {
       removingSolution.current = false;
     }
@@ -183,7 +187,7 @@ export default function InjuryDetailScreen() {
       setError(null);
       router.back();
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot archive injury');
+      setError(caught instanceof Error ? caught.message : t('injury.archiveError'));
       statusAction.current = false;
     }
   }
@@ -197,12 +201,12 @@ export default function InjuryDetailScreen() {
       const next = await reopenInjury(db, id);
       setInjury(next);
       const nextEvents = await listEventsForInjury(db, id);
-      const labels = await labelsForEvents(db, nextEvents);
+      const labels = await labelsForEvents(db, nextEvents, t);
       setEvents(nextEvents);
       setEventLabels(labels);
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot reopen injury');
+      setError(caught instanceof Error ? caught.message : t('injury.reopenError'));
     } finally {
       statusAction.current = false;
     }
@@ -215,32 +219,39 @@ export default function InjuryDetailScreen() {
     try {
       await Linking.openURL(url);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : `Cannot open URL (${url})`);
+      setError(caught instanceof Error ? caught.message : t('injury.openUrlError', { url }));
     }
   }
 
+  const screenTitle =
+    landmark == null ? t('injury.detailFallbackTitle') : landmarkName(landmark, t);
+
   return (
     <>
-      <Stack.Screen options={{ title: landmark?.name ?? 'Injury' }} />
+      <Stack.Screen options={{ title: screenTitle }} />
       <ThemedView style={styles.screen}>
         {injury === undefined ? null : error != null && injury == null ? (
           <ThemedText>{error}</ThemedText>
         ) : injury == null ? (
-          <ThemedText>{error ?? 'Cannot open injury.'}</ThemedText>
+          <ThemedText>{error ?? t('injury.openError')}</ThemedText>
         ) : (
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.scroll}>
             <ThemedText type="smallBold">
-              {landmark == null ? injury.landmarkId : formatLandmarkLabel(landmark, injury.limb)}
+              {landmark == null
+                ? injury.landmarkId
+                : formatLandmarkLabel(landmark, t, injury.limb)}
             </ThemedText>
             <ThemedText>{injury.description}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {new Date(injury.createdAt).toLocaleString()}
+              {new Date(injury.createdAt).toLocaleString(dateLocale)}
             </ThemedText>
             {injury.status === 'archived' && injury.archivedAt != null ? (
               <ThemedText type="small" themeColor="textSecondary">
-                Archived {new Date(injury.archivedAt).toLocaleString()}
+                {t('archive.archivedAt', {
+                  date: new Date(injury.archivedAt).toLocaleString(dateLocale),
+                })}
               </ThemedText>
             ) : null}
             {error != null ? <ThemedText>{error}</ThemedText> : null}
@@ -254,7 +265,7 @@ export default function InjuryDetailScreen() {
                   { backgroundColor: theme.backgroundSelected },
                   pressed && styles.pressed,
                 ]}>
-                <ThemedText type="smallBold">Archive</ThemedText>
+                <ThemedText type="smallBold">{t('injury.archive')}</ThemedText>
               </Pressable>
             ) : (
               <Pressable
@@ -265,11 +276,11 @@ export default function InjuryDetailScreen() {
                   { backgroundColor: theme.backgroundSelected },
                   pressed && styles.pressed,
                 ]}>
-                <ThemedText type="smallBold">Reopen</ThemedText>
+                <ThemedText type="smallBold">{t('injury.reopen')}</ThemedText>
               </Pressable>
             )}
 
-            <ThemedText type="smallBold">Solutions</ThemedText>
+            <ThemedText type="smallBold">{t('injury.solutions')}</ThemedText>
             {solutions.map((solution) => (
               <ThemedView key={solution.id} type="backgroundElement" style={styles.card}>
                 <ThemedText>{solution.body}</ThemedText>
@@ -277,14 +288,14 @@ export default function InjuryDetailScreen() {
                   <SolutionLink url={solution.url} onOpen={onOpenUrl} />
                 ) : null}
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(solution.createdAt).toLocaleString()}
+                  {new Date(solution.createdAt).toLocaleString(dateLocale)}
                 </ThemedText>
                 {isOpen ? (
                   <Pressable
                     accessibilityRole="button"
                     onPress={() => onRemoveSolution(solution.id)}
                     style={({ pressed }) => pressed && styles.pressed}>
-                    <ThemedText type="smallBold">Remove</ThemedText>
+                    <ThemedText type="smallBold">{t('injury.removeSolution')}</ThemedText>
                   </Pressable>
                 ) : null}
               </ThemedView>
@@ -292,10 +303,10 @@ export default function InjuryDetailScreen() {
             {isOpen ? (
               <>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Add solution
+                  {t('injury.addSolution')}
                 </ThemedText>
                 <TextInput
-                  accessibilityLabel="Solution"
+                  accessibilityLabel={t('injury.solutionLabel')}
                   multiline
                   textAlignVertical="top"
                   value={solutionBody}
@@ -303,10 +314,10 @@ export default function InjuryDetailScreen() {
                   style={[styles.input, styles.inputShort, inputColors(theme)]}
                 />
                 <ThemedText type="small" themeColor="textSecondary">
-                  URL (optional)
+                  {t('injury.urlOptional')}
                 </ThemedText>
                 <TextInput
-                  accessibilityLabel="URL (optional)"
+                  accessibilityLabel={t('injury.urlOptional')}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
@@ -323,36 +334,34 @@ export default function InjuryDetailScreen() {
                     { backgroundColor: theme.backgroundSelected },
                     (trimmedSolution.length === 0 || pressed) && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Add solution</ThemedText>
+                  <ThemedText type="smallBold">{t('injury.addSolution')}</ThemedText>
                 </Pressable>
               </>
             ) : null}
 
-            <ThemedText type="smallBold">Severity</ThemedText>
+            <ThemedText type="smallBold">{t('injury.severity')}</ThemedText>
             {readings.length >= 2 ? (
-              <SeverityTrendChart readings={readings} stroke={theme.text} />
+              <SeverityTrendChart
+                readings={readings}
+                stroke={theme.text}
+                accessibilityLabel={t('injury.severityTrend')}
+              />
             ) : null}
-            {readings.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                No severity readings yet.
-              </ThemedText>
-            ) : (
-              readings.map((reading) => (
-                <ThemedView key={reading.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText>{reading.value} / 10</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(reading.createdAt).toLocaleString()}
-                  </ThemedText>
-                </ThemedView>
-              ))
-            )}
+            {readings.map((reading) => (
+              <ThemedView key={reading.id} type="backgroundElement" style={styles.card}>
+                <ThemedText>{reading.value} / 10</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {new Date(reading.createdAt).toLocaleString(dateLocale)}
+                </ThemedText>
+              </ThemedView>
+            ))}
             {isOpen ? (
               <>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Severity 0–10
+                  {t('injury.severityLabel')}
                 </ThemedText>
                 <TextInput
-                  accessibilityLabel="Severity 0–10"
+                  accessibilityLabel={t('injury.severityLabel')}
                   keyboardType="number-pad"
                   value={severityText}
                   onChangeText={setSeverityText}
@@ -367,27 +376,27 @@ export default function InjuryDetailScreen() {
                     { backgroundColor: theme.backgroundSelected },
                     (parsedSeverity == null || pressed) && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Add</ThemedText>
+                  <ThemedText type="smallBold">{t('injury.addSeverity')}</ThemedText>
                 </Pressable>
               </>
             ) : null}
 
-            <ThemedText type="smallBold">Comments</ThemedText>
+            <ThemedText type="smallBold">{t('injury.comments')}</ThemedText>
             {comments.map((comment) => (
               <ThemedView key={comment.id} type="backgroundElement" style={styles.card}>
                 <ThemedText>{comment.body}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(comment.createdAt).toLocaleString()}
+                  {new Date(comment.createdAt).toLocaleString(dateLocale)}
                 </ThemedText>
               </ThemedView>
             ))}
             {isOpen ? (
               <>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Add comment
+                  {t('injury.addComment')}
                 </ThemedText>
                 <TextInput
-                  accessibilityLabel="Comment"
+                  accessibilityLabel={t('injury.commentLabel')}
                   multiline
                   textAlignVertical="top"
                   value={commentBody}
@@ -403,17 +412,17 @@ export default function InjuryDetailScreen() {
                     { backgroundColor: theme.backgroundSelected },
                     (trimmedComment.length === 0 || pressed) && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Add comment</ThemedText>
+                  <ThemedText type="smallBold">{t('injury.addComment')}</ThemedText>
                 </Pressable>
               </>
             ) : null}
 
-            <ThemedText type="smallBold">History</ThemedText>
+            <ThemedText type="smallBold">{t('injury.history')}</ThemedText>
             {events.map((event) => (
               <ThemedView key={event.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{eventLabels[event.id] ?? eventTypeLabel(event.type)}</ThemedText>
+                <ThemedText>{eventLabels[event.id] ?? eventTypeLabel(event.type, t)}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(event.createdAt).toLocaleString()}
+                  {new Date(event.createdAt).toLocaleString(dateLocale)}
                 </ThemedText>
               </ThemedView>
             ))}
@@ -441,9 +450,11 @@ function parseSeverityInput(text: string): number | null {
 function SeverityTrendChart({
   readings,
   stroke,
+  accessibilityLabel,
 }: {
   readings: SeverityReading[];
   stroke: string;
+  accessibilityLabel: string;
 }) {
   const width = 280;
   const height = 72;
@@ -461,7 +472,7 @@ function SeverityTrendChart({
     .join(' ');
 
   return (
-    <View style={styles.chart} accessibilityLabel="Severity trend">
+    <View style={styles.chart} accessibilityLabel={accessibilityLabel}>
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
         <Polyline points={points} fill="none" stroke={stroke} strokeWidth={2} />
       </Svg>
@@ -480,28 +491,29 @@ function SolutionLink({ url, onOpen }: { url: string; onOpen: (url: string) => v
   );
 }
 
-function eventTypeLabel(type: InjuryEvent['type']): string {
+function eventTypeLabel(type: InjuryEvent['type'], t: TranslateFn): string {
   switch (type) {
     case 'created':
-      return 'Created';
+      return t('injury.event.created');
     case 'archived':
-      return 'Archived';
+      return t('injury.event.archived');
     case 'reopened':
-      return 'Reopened';
+      return t('injury.event.reopened');
     case 'solution_added':
-      return 'Solution added';
+      return t('injury.event.solution_added');
     case 'solution_removed':
-      return 'Solution removed';
+      return t('injury.event.solution_removed');
   }
 }
 
 async function labelsForEvents(
   db: SQLiteDatabase,
   events: InjuryEvent[],
+  t: TranslateFn,
 ): Promise<Record<number, string>> {
   const labels: Record<number, string> = {};
   for (const event of events) {
-    const base = eventTypeLabel(event.type);
+    const base = eventTypeLabel(event.type, t);
     if (
       (event.type === 'solution_added' || event.type === 'solution_removed') &&
       event.solutionId != null
@@ -519,6 +531,7 @@ async function labelsForEvents(
 async function loadThread(
   db: SQLiteDatabase,
   id: number,
+  t: TranslateFn,
 ): Promise<{
   injury: Injury | null;
   comments: Comment[];
@@ -544,7 +557,7 @@ async function loadThread(
     listSeverityReadingsForInjury(db, id),
     listEventsForInjury(db, id),
   ]);
-  const eventLabels = await labelsForEvents(db, events);
+  const eventLabels = await labelsForEvents(db, events, t);
   return { injury, comments, solutions, readings, events, eventLabels };
 }
 

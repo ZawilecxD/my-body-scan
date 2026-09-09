@@ -11,6 +11,7 @@ import {
   overviewBadgePoint,
   overviewZonePaths,
 } from '@/domain/map-layout';
+import { useLocale } from '@/i18n/locale-context';
 
 const OPEN_ACCENT = '#3c87f7';
 
@@ -31,6 +32,7 @@ type BodyOverviewMapProps = {
 };
 
 export function BodyOverviewMap({ side, openCounts, onZonePress }: BodyOverviewMapProps) {
+  const { t } = useLocale();
   const pointerEvents = Platform.OS === 'android' ? 'box-none' : 'auto';
   const [box, setBox] = useState<Box | null>(null);
   const fitted =
@@ -70,7 +72,7 @@ export function BodyOverviewMap({ side, openCounts, onZonePress }: BodyOverviewM
                 stroke="none"
                 onPress={() => onZonePress(zonePath.zone)}
                 pointerEvents={pointerEvents}
-                accessibilityLabel={overviewZoneLabel(zonePath.zone)}
+                accessibilityLabel={overviewZoneLabel(zonePath.zone, t)}
               />
             ))}
             {zones.map((zonePath) => {

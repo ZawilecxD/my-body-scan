@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { migrate } from '@/db/migrate';
+import { LocaleProvider } from '@/i18n/locale-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,7 +32,9 @@ export default function RootLayout() {
         </ThemedView>
       ) : (
         <SQLiteProvider databaseName="my-body-scan.db" onInit={onInit} onError={setDbError}>
-          <Stack />
+          <LocaleProvider>
+            <Stack />
+          </LocaleProvider>
         </SQLiteProvider>
       )}
     </ThemeProvider>

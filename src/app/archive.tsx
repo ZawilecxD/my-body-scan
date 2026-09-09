@@ -9,10 +9,13 @@ import { Spacing } from '@/constants/theme';
 import { listArchivedInjuries } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function ArchiveScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const { t, resolvedLocale } = useLocale();
+  const dateLocale = resolvedLocale === 'pl' ? 'pl-PL' : 'en-US';
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigating = useRef(false);
@@ -31,25 +34,25 @@ export default function ArchiveScreen() {
         })
         .catch((caught: unknown) => {
           if (!cancelled) {
-            setError(caught instanceof Error ? caught.message : 'Cannot load archived injuries');
+            setError(caught instanceof Error ? caught.message : t('archive.loadError'));
           }
         });
 
       return () => {
         cancelled = true;
       };
-    }, [db]),
+    }, [db, t]),
   );
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Archive' }} />
+      <Stack.Screen options={{ title: t('archive.title') }} />
       <ThemedView style={styles.screen}>
         {error != null ? (
           <ThemedText>{error}</ThemedText>
         ) : injuries == null ? null : injuries.length === 0 ? (
           <ThemedView style={styles.empty}>
-            <ThemedText>No archived injuries.</ThemedText>
+            <ThemedText>{t('archive.empty')}</ThemedText>
           </ThemedView>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
@@ -58,7 +61,7 @@ export default function ArchiveScreen() {
               const title =
                 landmark == null
                   ? injury.landmarkId
-                  : formatLandmarkLabel(landmark, injury.limb);
+                  : formatLandmarkLabel(landmark, t, injury.limb);
 
               return (
                 <Pressable
@@ -79,7 +82,9 @@ export default function ArchiveScreen() {
                     </ThemedText>
                     {injury.archivedAt != null ? (
                       <ThemedText type="small" themeColor="textSecondary">
-                        Archived {new Date(injury.archivedAt).toLocaleString()}
+                        {t('archive.archivedAt', {
+                          date: new Date(injury.archivedAt).toLocaleString(dateLocale),
+                        })}
                       </ThemedText>
                     ) : null}
                   </ThemedView>

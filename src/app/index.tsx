@@ -19,11 +19,13 @@ import {
   overviewZoneLimb,
   overviewZoneRegion,
   REGION_ORDER,
+  regionLabel,
   type OverviewZoneId,
   type Region,
   type Side,
 } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/i18n/locale-context';
 
 type HomeView = 'graphic' | 'list';
 
@@ -31,6 +33,7 @@ export default function OpenInjuriesScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useLocale();
   const [view, setView] = useState<HomeView>('graphic');
   const [side, setSide] = useState<Side>('front');
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
@@ -59,14 +62,14 @@ export default function OpenInjuriesScreen() {
         })
         .catch((caught: unknown) => {
           if (!cancelled) {
-            setError(caught instanceof Error ? caught.message : 'Cannot load open injuries');
+            setError(caught instanceof Error ? caught.message : t('home.loadError'));
           }
         });
 
       return () => {
         cancelled = true;
       };
-    }, [db]),
+    }, [db, t]),
   );
 
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
@@ -76,7 +79,7 @@ export default function OpenInjuriesScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Open injuries',
+          title: t('home.title'),
           headerRight: () => (
             <ThemedView style={styles.headerActions}>
               <Pressable
@@ -90,7 +93,7 @@ export default function OpenInjuriesScreen() {
                   router.push('/illnesses');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Illnesses</ThemedText>
+                <ThemedText type="linkPrimary">{t('home.illnesses')}</ThemedText>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -103,7 +106,7 @@ export default function OpenInjuriesScreen() {
                   router.push('/summary');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Summary</ThemedText>
+                <ThemedText type="linkPrimary">{t('home.summary')}</ThemedText>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -116,7 +119,7 @@ export default function OpenInjuriesScreen() {
                   router.push('/backup');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Backup</ThemedText>
+                <ThemedText type="linkPrimary">{t('home.backup')}</ThemedText>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -129,7 +132,20 @@ export default function OpenInjuriesScreen() {
                   router.push('/archive');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Archive</ThemedText>
+                <ThemedText type="linkPrimary">{t('home.archive')}</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={Spacing.two}
+                onPress={() => {
+                  if (navigating.current) {
+                    return;
+                  }
+                  navigating.current = true;
+                  router.push('/settings');
+                }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText type="linkPrimary">{t('home.settings')}</ThemedText>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -142,7 +158,7 @@ export default function OpenInjuriesScreen() {
                   router.push('/landmarks');
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="linkPrimary">Log injury</ThemedText>
+                <ThemedText type="linkPrimary">{t('home.logInjury')}</ThemedText>
               </Pressable>
             </ThemedView>
           ),
@@ -151,13 +167,13 @@ export default function OpenInjuriesScreen() {
       <ThemedView style={styles.screen}>
         <ThemedView style={styles.segments}>
           <SegmentButton
-            label="Graphic"
+            label={t('home.graphic')}
             selected={view === 'graphic'}
             onPress={() => setView('graphic')}
             selectedBackground={theme.backgroundSelected}
           />
           <SegmentButton
-            label="List"
+            label={t('home.list')}
             selected={view === 'list'}
             onPress={() => setView('list')}
             selectedBackground={theme.backgroundSelected}
@@ -168,13 +184,13 @@ export default function OpenInjuriesScreen() {
           <>
             <ThemedView style={styles.segments}>
               <SegmentButton
-                label="Front"
+                label={t('home.front')}
                 selected={side === 'front'}
                 onPress={() => setSide('front')}
                 selectedBackground={theme.backgroundSelected}
               />
               <SegmentButton
-                label="Back"
+                label={t('home.back')}
                 selected={side === 'back'}
                 onPress={() => setSide('back')}
                 selectedBackground={theme.backgroundSelected}
@@ -210,12 +226,12 @@ export default function OpenInjuriesScreen() {
           <ThemedText>{error}</ThemedText>
         ) : injuries == null ? null : injuries.length === 0 ? (
           <ThemedView style={styles.empty}>
-            <ThemedText>No open injuries yet.</ThemedText>
+            <ThemedText>{t('home.empty')}</ThemedText>
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push('/landmarks')}
               style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
-              <ThemedText type="linkPrimary">Log injury</ThemedText>
+              <ThemedText type="linkPrimary">{t('home.logInjury')}</ThemedText>
             </Pressable>
           </ThemedView>
         ) : (
@@ -224,14 +240,14 @@ export default function OpenInjuriesScreen() {
             {groups.map((group) => (
               <ThemedView key={group.region} style={styles.section}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
-                  {regionLabel(group.region)}
+                  {regionLabel(group.region, t)}
                 </ThemedText>
                 {group.items.map((injury) => {
                   const landmark = getLandmarkById(injury.landmarkId);
                   const title =
                     landmark == null
                       ? injury.landmarkId
-                      : formatLandmarkLabel(landmark, injury.limb);
+                      : formatLandmarkLabel(landmark, t, injury.limb);
                   const latest = latestSolutions[injury.id];
 
                   return (
@@ -269,12 +285,12 @@ export default function OpenInjuriesScreen() {
                                   setLinkError(
                                     caught instanceof Error
                                       ? caught.message
-                                      : `Cannot open URL (${url})`,
+                                      : t('home.openUrlError', { url }),
                                   );
                                 });
                               }}
                               style={({ pressed }) => pressed && styles.pressed}>
-                              <ThemedText type="linkPrimary">Open link</ThemedText>
+                              <ThemedText type="linkPrimary">{t('common.openLink')}</ThemedText>
                             </Pressable>
                           ) : null}
                         </>
@@ -338,10 +354,6 @@ function groupInjuriesByRegion(injuries: Injury[]): { region: Region; items: Inj
     const items = injuries.filter((injury) => getLandmarkById(injury.landmarkId)?.region === region);
     return items.length > 0 ? [{ region, items }] : [];
   });
-}
-
-function regionLabel(region: Region): string {
-  return region.charAt(0).toUpperCase() + region.slice(1);
 }
 
 const styles = StyleSheet.create({

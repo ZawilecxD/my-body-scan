@@ -4,21 +4,28 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { groupLandmarksByRegion, LANDMARKS, type Region } from '@/domain/landmarks';
+import {
+  formatLandmarkLabel,
+  groupLandmarksByRegion,
+  LANDMARKS,
+  regionLabel,
+} from '@/domain/landmarks';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function LandmarksScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const groups = groupLandmarksByRegion(LANDMARKS);
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Log injury' }} />
+      <Stack.Screen options={{ title: t('landmarks.title') }} />
       <ThemedView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.list}>
           {groups.map((group) => (
             <ThemedView key={group.region} style={styles.section}>
               <ThemedText type="smallBold" themeColor="textSecondary">
-                {regionLabel(group.region)}
+                {regionLabel(group.region, t)}
               </ThemedText>
               {group.landmarks.map((landmark) => (
                 <Pressable
@@ -32,9 +39,7 @@ export default function LandmarksScreen() {
                   }
                   style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
                   <ThemedView type="backgroundElement" style={styles.rowInner}>
-                    <ThemedText>
-                      {landmark.name} · {landmark.side}
-                    </ThemedText>
+                    <ThemedText>{formatLandmarkLabel(landmark, t)}</ThemedText>
                   </ThemedView>
                 </Pressable>
               ))}
@@ -44,10 +49,6 @@ export default function LandmarksScreen() {
       </ThemedView>
     </>
   );
-}
-
-function regionLabel(region: Region): string {
-  return region.charAt(0).toUpperCase() + region.slice(1);
 }
 
 const styles = StyleSheet.create({

@@ -16,6 +16,7 @@ import {
   type SummaryDocument,
   type SummaryInjurySection,
 } from '@/domain/summary';
+import type { TranslateFn } from '@/i18n';
 
 type InjuryRow = {
   id: number;
@@ -34,6 +35,7 @@ export async function loadSummary(
   db: SQLiteDatabase,
   config: SummaryConfig,
   now: Date,
+  t: TranslateFn,
 ): Promise<SummaryDocument> {
   const window = resolveWindow(config.windowPreset, now);
   const rows = await db.getAllAsync<InjuryRow>(
@@ -54,7 +56,7 @@ export async function loadSummary(
   const sections: SummaryInjurySection[] = [];
   for (const injury of selected) {
     const region = regionForInjury(injury);
-    const landmarkLabel = landmarkLabelForInjury(injury);
+    const landmarkLabel = landmarkLabelForInjury(injury, t);
 
     let description: string | null = null;
     if (config.includeDescription) {
