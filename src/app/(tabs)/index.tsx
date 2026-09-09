@@ -7,7 +7,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BodyOverviewMap } from '@/components/body-overview-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconButton } from '@/components/ui';
+import { Card, Chip, IconButton, SegmentedControl } from '@/components/ui';
 import { Radii, Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import { listLatestSolutionsByInjuryIds } from '@/db/solutions';
@@ -115,6 +115,7 @@ export default function OpenInjuriesScreen() {
 
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
   const openCounts = countOpenByZone(injuries ?? [], side);
+  const openCount = injuries?.length ?? 0;
 
   const openLogInjury = () => {
     if (navigating.current) {
@@ -122,6 +123,14 @@ export default function OpenInjuriesScreen() {
     }
     navigating.current = true;
     router.push('/landmarks');
+  };
+
+  const openInjury = (id: number) => {
+    if (navigating.current) {
+      return;
+    }
+    navigating.current = true;
+    router.push(`/injuries/${id}`);
   };
 
   return (
@@ -133,41 +142,36 @@ export default function OpenInjuriesScreen() {
         }}
       />
       <ThemedView style={styles.screen}>
-        <ThemedView style={styles.segments}>
-          <SegmentButton
-            label="Graphic"
-            selected={view === 'graphic'}
-            onPress={() => setView('graphic')}
-            selectedBackground={theme.backgroundSelected}
-          />
-          <SegmentButton
-            label="List"
-            selected={view === 'list'}
-            onPress={() => setView('list')}
-            selectedBackground={theme.backgroundSelected}
-          />
-        </ThemedView>
+        <View style={styles.titleRow}>
+          <ThemedText type="headlineMd">Open injuries</ThemedText>
+          {injuries != null ? (
+            <Chip label={`${openCount} active`} selected={openCount > 0} />
+          ) : null}
+        </View>
+
+        <SegmentedControl
+          options={[
+            { value: 'graphic', label: 'Graphic' },
+            { value: 'list', label: 'List' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
 
         {view === 'graphic' ? (
           <>
-            <ThemedView style={styles.segments}>
-              <SegmentButton
-                label="Front"
-                selected={side === 'front'}
-                onPress={() => setSide('front')}
-                selectedBackground={theme.backgroundSelected}
-              />
-              <SegmentButton
-                label="Back"
-                selected={side === 'back'}
-                onPress={() => setSide('back')}
-                selectedBackground={theme.backgroundSelected}
-              />
-            </ThemedView>
+            <SegmentedControl
+              options={[
+                { value: 'front', label: 'Front' },
+                { value: 'back', label: 'Back' },
+              ]}
+              value={side}
+              onChange={setSide}
+            />
             {error != null ? (
               <ThemedText>{error}</ThemedText>
             ) : (
-              <ThemedView style={styles.mapFrame}>
+              <Card style={styles.mapCard} elevated>
                 <BodyOverviewMap
                   side={side}
                   openCounts={openCounts}
@@ -187,8 +191,42 @@ export default function OpenInjuriesScreen() {
                     });
                   }}
                 />
-              </ThemedView>
+              </Card>
             )}
+            {injuries != null && injuries.length > 0 ? (
+              <View style={styles.focusBlock}>
+                <ThemedText type="titleMd">Immediate Focus</ThemedText>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.focusRow}>
+                  {injuries.map((injury) => {
+                    const landmark = getLandmarkById(injury.landmarkId);
+                    const title =
+                      landmark == null
+                        ? injury.landmarkId
+                        : formatLandmarkLabel(landmark, injury.limb);
+                    return (
+                      <Pressable
+                        key={injury.id}
+                        accessibilityRole="button"
+                        onPress={() => openInjury(injury.id)}
+                        style={({ pressed }) => pressed && styles.pressed}>
+                        <Card style={styles.focusCard}>
+                          <Chip label="OPEN" selected />
+                          <ThemedText type="titleMd" numberOfLines={1}>
+                            {title}
+                          </ThemedText>
+                          <ThemedText type="bodySm" themeColor="textSecondary" numberOfLines={2}>
+                            {injury.description}
+                          </ThemedText>
+                        </Card>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
           </>
         ) : error != null ? (
           <ThemedText>{error}</ThemedText>
@@ -206,8 +244,8 @@ export default function OpenInjuriesScreen() {
           <ScrollView contentContainerStyle={styles.list}>
             {linkError != null ? <ThemedText>{linkError}</ThemedText> : null}
             {groups.map((group) => (
-              <ThemedView key={group.region} style={styles.section}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
+              <View key={group.region} style={styles.section}>
+                <ThemedText type="labelMd" themeColor="textSecondary">
                   {regionLabel(group.region)}
                 </ThemedText>
                 {group.items.map((injury) => {
@@ -219,28 +257,21 @@ export default function OpenInjuriesScreen() {
                   const latest = latestSolutions[injury.id];
 
                   return (
-                    <ThemedView
-                      key={injury.id}
-                      type="backgroundElement"
-                      style={styles.rowInner}>
+                    <Card key={injury.id} style={styles.rowCard}>
                       <Pressable
                         accessibilityRole="button"
-                        onPress={() => {
-                          if (navigating.current) {
-                            return;
-                          }
-                          navigating.current = true;
-                          router.push(`/injuries/${injury.id}`);
-                        }}
+                        onPress={() => openInjury(injury.id)}
                         style={({ pressed }) => pressed && styles.pressed}>
-                        <ThemedText type="smallBold">{title}</ThemedText>
-                        <ThemedText themeColor="textSecondary" numberOfLines={2}>
+                        <ThemedText type="titleMd">{title}</ThemedText>
+                        <ThemedText type="bodyMd" themeColor="textSecondary" numberOfLines={2}>
                           {injury.description}
                         </ThemedText>
                       </Pressable>
                       {latest != null ? (
                         <>
-                          <ThemedText numberOfLines={1}>{latest.body}</ThemedText>
+                          <ThemedText type="bodySm" numberOfLines={1}>
+                            {latest.body}
+                          </ThemedText>
                           {latest.url != null && isHttpUrl(latest.url) ? (
                             <Pressable
                               accessibilityRole="link"
@@ -263,10 +294,10 @@ export default function OpenInjuriesScreen() {
                           ) : null}
                         </>
                       ) : null}
-                    </ThemedView>
+                    </Card>
                   );
                 })}
-              </ThemedView>
+              </View>
             ))}
           </ScrollView>
         )}
@@ -277,10 +308,7 @@ export default function OpenInjuriesScreen() {
           onPress={openLogInjury}
           style={({ pressed }) => [
             styles.fab,
-            {
-              backgroundColor: theme.primaryContainer,
-              bottom: Spacing.spaceMd,
-            },
+            { backgroundColor: theme.primaryContainer },
             pressed && styles.fabPressed,
           ]}>
           <SymbolView
@@ -299,32 +327,6 @@ export default function OpenInjuriesScreen() {
         </Pressable>
       </ThemedView>
     </>
-  );
-}
-
-function SegmentButton({
-  label,
-  selected,
-  onPress,
-  selectedBackground,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-  selectedBackground: string;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.segment,
-        selected && { backgroundColor: selectedBackground },
-        pressed && styles.pressed,
-      ]}>
-      <ThemedText type="smallBold">{label}</ThemedText>
-    </Pressable>
   );
 }
 
@@ -358,56 +360,61 @@ function regionLabel(region: Region): string {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: Spacing.three,
-    gap: Spacing.three,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
     paddingBottom: Spacing.six,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.spaceSm,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
   },
-  segments: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.three,
-  },
-  mapFrame: {
+  mapCard: {
     flex: 1,
     minHeight: 320,
-    overflow: 'hidden',
+    padding: Spacing.spaceXs,
+  },
+  focusBlock: {
+    gap: Spacing.spaceXs,
+  },
+  focusRow: {
+    gap: Spacing.spaceSm,
+    paddingRight: Spacing.spaceMd,
+  },
+  focusCard: {
+    width: 220,
+    gap: Spacing.spaceXs,
   },
   list: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.four,
+    gap: Spacing.spaceMd,
+    paddingBottom: Spacing.six,
   },
   section: {
-    gap: Spacing.two,
+    gap: Spacing.spaceXs,
   },
-  rowInner: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  rowCard: {
+    gap: Spacing.spaceXs,
   },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.spaceMd,
   },
   cta: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.spaceXs,
+    paddingHorizontal: Spacing.spaceMd,
   },
   fab: {
     position: 'absolute',
     right: Spacing.spaceMd,
+    bottom: Spacing.spaceMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.spaceXs,

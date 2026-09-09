@@ -1,11 +1,20 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppButton, Card, Chip, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { createComment, listCommentsForInjury } from '@/db/comments';
 import { listEventsForInjury } from '@/db/events';
@@ -21,6 +30,8 @@ import { isHttpUrl } from '@/domain/http-url';
 import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
+
+const SEVERITY_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 export default function InjuryDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -40,7 +51,7 @@ export default function InjuryDetailScreen() {
   const [commentBody, setCommentBody] = useState('');
   const [solutionBody, setSolutionBody] = useState('');
   const [solutionUrl, setSolutionUrl] = useState('');
-  const [severityText, setSeverityText] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const addingComment = useRef(false);
   const addingSolution = useRef(false);
   const addingReading = useRef(false);
@@ -88,9 +99,8 @@ export default function InjuryDetailScreen() {
   const landmark = injury == null ? undefined : getLandmarkById(injury.landmarkId);
   const trimmedComment = commentBody.trim();
   const trimmedSolution = solutionBody.trim();
-  const trimmedSeverity = severityText.trim();
-  const parsedSeverity = parseSeverityInput(trimmedSeverity);
   const isOpen = injury?.status === 'open';
+  const latestReading = readings.length === 0 ? null : readings[readings.length - 1];
 
   async function reloadSolutionsAndEvents() {
     const [nextSolutions, nextEvents] = await Promise.all([
@@ -139,16 +149,15 @@ export default function InjuryDetailScreen() {
     }
   }
 
-  async function onAddReading() {
-    if (addingReading.current || parsedSeverity == null || Number.isNaN(id) || !isOpen) {
+  async function onAddReading(value: number) {
+    if (addingReading.current || Number.isNaN(id) || !isOpen) {
       return;
     }
     addingReading.current = true;
     try {
-      await createSeverityReading(db, { injuryId: id, value: parsedSeverity });
+      await createSeverityReading(db, { injuryId: id, value });
       const next = await listSeverityReadingsForInjury(db, id);
       setReadings(next);
-      setSeverityText('');
       setError(null);
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : 'Cannot add severity reading');
@@ -228,214 +237,201 @@ export default function InjuryDetailScreen() {
         ) : injury == null ? (
           <ThemedText>{error ?? 'Cannot open injury.'}</ThemedText>
         ) : (
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scroll}>
-            <ThemedText type="smallBold">
-              {landmark == null ? injury.landmarkId : formatLandmarkLabel(landmark, injury.limb)}
-            </ThemedText>
-            <ThemedText>{injury.description}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {new Date(injury.createdAt).toLocaleString()}
-            </ThemedText>
-            {injury.status === 'archived' && injury.archivedAt != null ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Archived {new Date(injury.archivedAt).toLocaleString()}
-              </ThemedText>
-            ) : null}
-            {error != null ? <ThemedText>{error}</ThemedText> : null}
-
-            {injury.status === 'open' ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onArchive}
-                style={({ pressed }) => [
-                  styles.statusAction,
-                  { backgroundColor: theme.backgroundSelected },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="smallBold">Archive</ThemedText>
-              </Pressable>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onReopen}
-                style={({ pressed }) => [
-                  styles.statusAction,
-                  { backgroundColor: theme.backgroundSelected },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="smallBold">Reopen</ThemedText>
-              </Pressable>
-            )}
-
-            <ThemedText type="smallBold">Solutions</ThemedText>
-            {solutions.map((solution) => (
-              <ThemedView key={solution.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{solution.body}</ThemedText>
-                {solution.url != null && isHttpUrl(solution.url) ? (
-                  <SolutionLink url={solution.url} onOpen={onOpenUrl} />
-                ) : null}
-                <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(solution.createdAt).toLocaleString()}
-                </ThemedText>
-                {isOpen ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => onRemoveSolution(solution.id)}
-                    style={({ pressed }) => pressed && styles.pressed}>
-                    <ThemedText type="smallBold">Remove</ThemedText>
-                  </Pressable>
-                ) : null}
-              </ThemedView>
-            ))}
-            {isOpen ? (
-              <>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Add solution
-                </ThemedText>
-                <TextInput
-                  accessibilityLabel="Solution"
-                  multiline
-                  textAlignVertical="top"
-                  value={solutionBody}
-                  onChangeText={setSolutionBody}
-                  style={[styles.input, styles.inputShort, inputColors(theme)]}
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={88}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scroll}>
+              <View style={styles.statusRow}>
+                <Chip label={isOpen ? 'OPEN' : 'Archived'} selected={isOpen} />
+                <AppButton
+                  label={isOpen ? 'Archive' : 'Reopen'}
+                  variant={isOpen ? 'ghost' : 'secondary'}
+                  onPress={isOpen ? onArchive : onReopen}
+                  style={styles.statusButton}
                 />
-                <ThemedText type="small" themeColor="textSecondary">
-                  URL (optional)
-                </ThemedText>
-                <TextInput
-                  accessibilityLabel="URL (optional)"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="url"
-                  value={solutionUrl}
-                  onChangeText={setSolutionUrl}
-                  style={[styles.input, inputColors(theme)]}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={trimmedSolution.length === 0}
-                  onPress={onAddSolution}
-                  style={({ pressed }) => [
-                    styles.save,
-                    { backgroundColor: theme.backgroundSelected },
-                    (trimmedSolution.length === 0 || pressed) && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold">Add solution</ThemedText>
-                </Pressable>
-              </>
-            ) : null}
+              </View>
 
-            <ThemedText type="smallBold">Severity</ThemedText>
-            {readings.length >= 2 ? (
-              <SeverityTrendChart readings={readings} stroke={theme.text} />
-            ) : null}
-            {readings.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                No severity readings yet.
+              <ThemedText type="headlineMd">
+                {landmark == null
+                  ? injury.landmarkId
+                  : formatLandmarkLabel(landmark, injury.limb)}
               </ThemedText>
-            ) : (
-              readings.map((reading) => (
-                <ThemedView key={reading.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText>{reading.value} / 10</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(reading.createdAt).toLocaleString()}
+              <ThemedText type="bodySm" themeColor="textSecondary">
+                Logged {new Date(injury.createdAt).toLocaleString()}
+                {injury.status === 'archived' && injury.archivedAt != null
+                  ? ` · archived ${new Date(injury.archivedAt).toLocaleString()}`
+                  : ''}
+              </ThemedText>
+
+              {error != null ? <ThemedText themeColor="error">{error}</ThemedText> : null}
+
+              <Card style={styles.block}>
+                <ThemedText type="labelMd" themeColor="textSecondary">
+                  Description
+                </ThemedText>
+                <ThemedText type="bodyLg">{injury.description}</ThemedText>
+              </Card>
+
+              <Card style={styles.block}>
+                <View style={styles.sectionHeader}>
+                  <ThemedText type="titleMd">Severity</ThemedText>
+                  {latestReading != null ? (
+                    <ThemedText type="dataLg">{latestReading.value}/10</ThemedText>
+                  ) : null}
+                </View>
+                {readings.length >= 2 ? (
+                  <SeverityTrendChart readings={readings} stroke={theme.primary} />
+                ) : null}
+                {readings.length === 0 ? (
+                  <ThemedText type="bodySm" themeColor="textSecondary">
+                    No severity readings yet.
                   </ThemedText>
-                </ThemedView>
-              ))
-            )}
-            {isOpen ? (
-              <>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Severity 0–10
-                </ThemedText>
-                <TextInput
-                  accessibilityLabel="Severity 0–10"
-                  keyboardType="number-pad"
-                  value={severityText}
-                  onChangeText={setSeverityText}
-                  style={[styles.input, inputColors(theme)]}
-                />
+                ) : null}
+                {isOpen ? (
+                  <View style={styles.chipRow}>
+                    {SEVERITY_VALUES.map((value) => (
+                      <Chip
+                        key={value}
+                        label={String(value)}
+                        selected={latestReading?.value === value}
+                        onPress={() => onAddReading(value)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+              </Card>
+
+              <View style={styles.block}>
+                <ThemedText type="titleMd">Solutions</ThemedText>
+                {solutions.map((solution) => (
+                  <Card key={solution.id} style={styles.itemCard}>
+                    <ThemedText type="bodyMd">{solution.body}</ThemedText>
+                    {solution.url != null && isHttpUrl(solution.url) ? (
+                      <SolutionLink url={solution.url} onOpen={onOpenUrl} />
+                    ) : null}
+                    <ThemedText type="bodySm" themeColor="textSecondary">
+                      {new Date(solution.createdAt).toLocaleString()}
+                    </ThemedText>
+                    {isOpen ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => onRemoveSolution(solution.id)}
+                        style={({ pressed }) => pressed && styles.pressed}>
+                        <ThemedText type="labelMd" themeColor="error">
+                          Remove
+                        </ThemedText>
+                      </Pressable>
+                    ) : null}
+                  </Card>
+                ))}
+                {isOpen ? (
+                  <Card style={styles.itemCard}>
+                    <TextField
+                      label="Add solution"
+                      accessibilityLabel="Solution"
+                      multiline
+                      textAlignVertical="top"
+                      value={solutionBody}
+                      onChangeText={setSolutionBody}
+                      style={styles.inputTall}
+                    />
+                    <TextField
+                      label="URL (optional)"
+                      accessibilityLabel="URL (optional)"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      value={solutionUrl}
+                      onChangeText={setSolutionUrl}
+                    />
+                    <AppButton
+                      label="Add solution"
+                      disabled={trimmedSolution.length === 0}
+                      onPress={onAddSolution}
+                    />
+                  </Card>
+                ) : null}
+              </View>
+
+              <View style={styles.block}>
+                <ThemedText type="titleMd">Comments</ThemedText>
+                {comments.length === 0 ? (
+                  <ThemedText type="bodySm" themeColor="textSecondary">
+                    No comments yet.
+                  </ThemedText>
+                ) : (
+                  comments.map((comment) => (
+                    <Card key={comment.id} style={styles.itemCard}>
+                      <ThemedText type="bodyMd">{comment.body}</ThemedText>
+                      <ThemedText type="bodySm" themeColor="textSecondary">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </ThemedText>
+                    </Card>
+                  ))
+                )}
+              </View>
+
+              <Card style={styles.block}>
                 <Pressable
                   accessibilityRole="button"
-                  disabled={parsedSeverity == null}
-                  onPress={onAddReading}
-                  style={({ pressed }) => [
-                    styles.save,
-                    { backgroundColor: theme.backgroundSelected },
-                    (parsedSeverity == null || pressed) && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold">Add</ThemedText>
+                  accessibilityState={{ expanded: historyOpen }}
+                  onPress={() => setHistoryOpen((open) => !open)}
+                  style={styles.sectionHeader}>
+                  <ThemedText type="titleMd">History</ThemedText>
+                  <ThemedText type="labelMd" themeColor="primary">
+                    {historyOpen ? 'Hide' : 'Show'}
+                  </ThemedText>
                 </Pressable>
-              </>
-            ) : null}
+                {historyOpen
+                  ? events.map((event) => (
+                      <View key={event.id} style={styles.historyRow}>
+                        <ThemedText type="bodyMd">
+                          {eventLabels[event.id] ?? eventTypeLabel(event.type)}
+                        </ThemedText>
+                        <ThemedText type="bodySm" themeColor="textSecondary">
+                          {new Date(event.createdAt).toLocaleString()}
+                        </ThemedText>
+                      </View>
+                    ))
+                  : null}
+              </Card>
+            </ScrollView>
 
-            <ThemedText type="smallBold">Comments</ThemedText>
-            {comments.map((comment) => (
-              <ThemedView key={comment.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{comment.body}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(comment.createdAt).toLocaleString()}
-                </ThemedText>
-              </ThemedView>
-            ))}
             {isOpen ? (
-              <>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Add comment
-                </ThemedText>
-                <TextInput
+              <View
+                style={[
+                  styles.composer,
+                  {
+                    backgroundColor: theme.surface,
+                    borderTopColor: theme.outlineVariant,
+                  },
+                ]}>
+                <TextField
                   accessibilityLabel="Comment"
+                  placeholder="Add a comment"
                   multiline
                   textAlignVertical="top"
                   value={commentBody}
                   onChangeText={setCommentBody}
-                  style={[styles.input, styles.inputShort, inputColors(theme)]}
+                  style={styles.composerInput}
+                  containerStyle={styles.composerField}
                 />
-                <Pressable
-                  accessibilityRole="button"
+                <AppButton
+                  label="Send"
                   disabled={trimmedComment.length === 0}
                   onPress={onAddComment}
-                  style={({ pressed }) => [
-                    styles.save,
-                    { backgroundColor: theme.backgroundSelected },
-                    (trimmedComment.length === 0 || pressed) && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold">Add comment</ThemedText>
-                </Pressable>
-              </>
+                  style={styles.composerSend}
+                />
+              </View>
             ) : null}
-
-            <ThemedText type="smallBold">History</ThemedText>
-            {events.map((event) => (
-              <ThemedView key={event.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{eventLabels[event.id] ?? eventTypeLabel(event.type)}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(event.createdAt).toLocaleString()}
-                </ThemedText>
-              </ThemedView>
-            ))}
-          </ScrollView>
+          </KeyboardAvoidingView>
         )}
       </ThemedView>
     </>
   );
-}
-
-function parseSeverityInput(text: string): number | null {
-  if (text.length === 0) {
-    return null;
-  }
-  if (!/^\d{1,2}$/.test(text)) {
-    return null;
-  }
-  const value = Number(text);
-  if (!Number.isInteger(value) || value < 0 || value > 10) {
-    return null;
-  }
-  return value;
 }
 
 function SeverityTrendChart({
@@ -548,49 +544,76 @@ async function loadThread(
   return { injury, comments, solutions, readings, events, eventLabels };
 }
 
-function inputColors(theme: { text: string; backgroundElement: string }) {
-  return { color: theme.text, backgroundColor: theme.backgroundElement };
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  flex: {
+    flex: 1,
+  },
   scroll: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
     paddingBottom: Spacing.six,
   },
-  card: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.spaceSm,
+  },
+  statusButton: {
+    minHeight: 40,
+    paddingHorizontal: Spacing.spaceMd,
+  },
+  block: {
+    gap: Spacing.spaceXs,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.spaceSm,
+  },
+  itemCard: {
+    gap: Spacing.spaceXs,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.space2xs,
   },
   chart: {
     height: 72,
     marginVertical: Spacing.one,
   },
-  input: {
-    minHeight: 48,
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    fontSize: 16,
-  },
-  inputShort: {
+  inputTall: {
     minHeight: 96,
   },
-  save: {
-    alignItems: 'center',
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  historyRow: {
+    gap: 2,
+    paddingTop: Spacing.spaceXs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
-  statusAction: {
-    alignItems: 'center',
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
-    marginVertical: Spacing.one,
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacing.spaceXs,
+    paddingHorizontal: Spacing.spaceMd,
+    paddingVertical: Spacing.spaceXs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  composerField: {
+    flex: 1,
+  },
+  composerInput: {
+    minHeight: 44,
+    maxHeight: 96,
+  },
+  composerSend: {
+    minWidth: 88,
+    minHeight: 44,
   },
   pressed: {
     opacity: 0.7,

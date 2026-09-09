@@ -331,7 +331,7 @@ Manual:
 
 #### Automated
 
-- [ ] 3.1 Home/region/create/detail typecheck and lint
+- [x] 3.1 Home/region/create/detail typecheck and lint
 
 #### Manual
 

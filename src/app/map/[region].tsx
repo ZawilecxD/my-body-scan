@@ -1,11 +1,12 @@
-import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Card, Chip, SegmentedControl } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
@@ -40,9 +41,9 @@ function parseSide(value: string | undefined): Side | null {
 function areaTitle(region: Region, side: Side, limb: ReturnType<typeof parseLimb>): string {
   if (limb != null && (region === 'arms' || region === 'legs')) {
     const zone: OverviewZoneId = region === 'arms' ? `${limb}-arm` : `${limb}-leg`;
-    return `${overviewZoneLabel(zone)} · ${side}`;
+    return `${overviewZoneLabel(zone)} · ${side === 'front' ? 'Front' : 'Back'}`;
   }
-  return `${region.charAt(0).toUpperCase() + region.slice(1)} · ${side}`;
+  return `${region.charAt(0).toUpperCase() + region.slice(1)} · ${side === 'front' ? 'Front' : 'Back'}`;
 }
 
 export default function MapRegionScreen() {
@@ -109,6 +110,7 @@ export default function MapRegionScreen() {
 
   const landmarks = landmarksForArea(region, side);
   const sections = groupInjuriesByLandmark(landmarks, injuries ?? [], limb);
+  const openInArea = sections.flatMap((section) => section.items);
 
   function onLog(landmarkId: string) {
     if (navigating.current) {
@@ -125,58 +127,97 @@ export default function MapRegionScreen() {
     <>
       <Stack.Screen options={{ title: areaTitle(region, side, limb) }} />
       <ThemedView style={styles.screen}>
-        <ThemedView style={styles.segments}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: side === 'front' }}
-            onPress={() => router.setParams({ side: 'front' })}
-            style={({ pressed }) => [
-              styles.segment,
-              side === 'front' && { backgroundColor: theme.backgroundSelected },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold">Front</ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: side === 'back' }}
-            onPress={() => router.setParams({ side: 'back' })}
-            style={({ pressed }) => [
-              styles.segment,
-              side === 'back' && { backgroundColor: theme.backgroundSelected },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold">Back</ThemedText>
-          </Pressable>
-        </ThemedView>
+        <View style={styles.pad}>
+          <SegmentedControl
+            options={[
+              { value: 'front', label: 'Front' },
+              { value: 'back', label: 'Back' },
+            ]}
+            value={side}
+            onChange={(next) => router.setParams({ side: next })}
+          />
+        </View>
+
+        <Card style={styles.locator}>
+          <ThemedText type="labelMd" themeColor="textSecondary">
+            Locator
+          </ThemedText>
+          <ThemedText type="titleMd">{areaTitle(region, side, limb)}</ThemedText>
+          <ThemedText type="bodySm" themeColor="textSecondary">
+            Pick a landmark to log, or open an active flare below.
+          </ThemedText>
+        </Card>
+
+        {openInArea.length > 0 ? (
+          <View style={styles.flareBlock}>
+            <ThemedText type="titleMd" style={styles.pad}>
+              Active flares
+            </ThemedText>
+            {openInArea.map((injury) => {
+              const landmark = getLandmarkById(injury.landmarkId);
+              const title =
+                landmark == null
+                  ? injury.landmarkId
+                  : formatLandmarkLabel(landmark, injury.limb);
+              return (
+                <Pressable
+                  key={injury.id}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    if (navigating.current) {
+                      return;
+                    }
+                    navigating.current = true;
+                    router.push(`/injuries/${injury.id}`);
+                  }}
+                  style={({ pressed }) => [styles.padH, pressed && styles.pressed]}>
+                  <Card style={styles.flareCard}>
+                    <Chip label="OPEN" selected />
+                    <ThemedText type="titleMd">{title}</ThemedText>
+                    <ThemedText type="bodySm" themeColor="textSecondary" numberOfLines={2}>
+                      {injury.description}
+                    </ThemedText>
+                  </Card>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
         {error != null ? (
           <ThemedText style={styles.message}>{error}</ThemedText>
         ) : injuries == null ? null : (
           <ScrollView contentContainerStyle={styles.list}>
             {sections.map((section) => (
-              <ThemedView key={section.landmark.id} style={styles.section}>
+              <Card key={section.landmark.id} style={styles.landmarkCard}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Log injury on ${section.landmark.name}`}
                   onPress={() => onLog(section.landmark.id)}
-                  style={({ pressed }) => [
-                    styles.sectionHeader,
-                    { backgroundColor: theme.backgroundElement },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold" style={styles.sectionTitle}>
-                    {section.landmark.name}
-                  </ThemedText>
-                  <SymbolView
-                    name={{ ios: 'plus', android: 'add' }}
-                    size={22}
-                    tintColor={theme.text}
-                    fallback={
-                      <ThemedText type="smallBold" accessibilityElementsHidden>
-                        +
-                      </ThemedText>
-                    }
-                  />
+                  style={({ pressed }) => [styles.sectionHeader, pressed && styles.pressed]}>
+                  <View style={styles.sectionTitleBlock}>
+                    <ThemedText type="titleMd">{section.landmark.name}</ThemedText>
+                    <ThemedText type="bodySm" themeColor="textSecondary">
+                      {section.items.length === 0
+                        ? 'No open injuries'
+                        : `${section.items.length} open`}
+                    </ThemedText>
+                  </View>
+                  <View style={[styles.logPill, { backgroundColor: theme.primaryContainer }]}>
+                    <SymbolView
+                      name={{ ios: 'plus', android: 'add', web: 'add' }}
+                      size={18}
+                      tintColor={theme.onPrimary}
+                      fallback={
+                        <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
+                          +
+                        </ThemedText>
+                      }
+                    />
+                    <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
+                      Log
+                    </ThemedText>
+                  </View>
                 </Pressable>
                 {section.items.map((injury) => {
                   const landmark = getLandmarkById(injury.landmarkId);
@@ -186,25 +227,25 @@ export default function MapRegionScreen() {
                       : formatLandmarkLabel(landmark, injury.limb);
 
                   return (
-                    <ThemedView key={injury.id} style={styles.row}>
-                      <Link href={`/injuries/${injury.id}`} asChild>
-                        <Pressable
-                          accessibilityRole="button"
-                          style={({ pressed }) => [
-                            styles.rowInner,
-                            { borderColor: theme.backgroundSelected },
-                            pressed && styles.pressed,
-                          ]}>
-                          <ThemedText type="smallBold">{title}</ThemedText>
-                          <ThemedText themeColor="textSecondary" numberOfLines={2}>
-                            {injury.description}
-                          </ThemedText>
-                        </Pressable>
-                      </Link>
-                    </ThemedView>
+                    <Pressable
+                      key={injury.id}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        if (navigating.current) {
+                          return;
+                        }
+                        navigating.current = true;
+                        router.push(`/injuries/${injury.id}`);
+                      }}
+                      style={({ pressed }) => [styles.injuryRow, pressed && styles.pressed]}>
+                      <ThemedText type="smallBold">{title}</ThemedText>
+                      <ThemedText themeColor="textSecondary" numberOfLines={2}>
+                        {injury.description}
+                      </ThemedText>
+                    </Pressable>
                   );
                 })}
-              </ThemedView>
+              </Card>
             ))}
           </ScrollView>
         )}
@@ -232,50 +273,60 @@ function groupInjuriesByLandmark(
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    paddingTop: Spacing.three,
-    gap: Spacing.three,
+    paddingTop: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
   },
-  segments: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    marginHorizontal: Spacing.three,
+  pad: {
+    marginHorizontal: Spacing.spaceMd,
   },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.three,
+  padH: {
+    marginHorizontal: Spacing.spaceMd,
+  },
+  locator: {
+    marginHorizontal: Spacing.spaceMd,
+    gap: Spacing.space2xs,
+  },
+  flareBlock: {
+    gap: Spacing.spaceXs,
+  },
+  flareCard: {
+    gap: Spacing.spaceXs,
   },
   list: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.four,
+    gap: Spacing.spaceSm,
+    paddingHorizontal: Spacing.spaceMd,
+    paddingBottom: Spacing.spaceXl,
   },
-  section: {
-    gap: Spacing.two,
+  landmarkCard: {
+    gap: Spacing.spaceXs,
+    padding: Spacing.spaceSm,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
+    gap: Spacing.spaceSm,
   },
-  sectionTitle: {
-    fontSize: 16,
-    lineHeight: 24,
+  sectionTitleBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  logPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.spaceSm,
+    paddingVertical: Spacing.space2xs,
+    borderRadius: 999,
+  },
+  injuryRow: {
+    gap: Spacing.one,
+    paddingVertical: Spacing.spaceXs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
   message: {
-    marginHorizontal: Spacing.three,
-  },
-  row: {
-    marginHorizontal: Spacing.three,
-  },
-  rowInner: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: 1,
+    marginHorizontal: Spacing.spaceMd,
   },
   pressed: {
     opacity: 0.7,

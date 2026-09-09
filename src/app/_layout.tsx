@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { SQLiteProvider, type SQLiteDatabase } from 'expo-sqlite';
 import * as SplashScreen from 'expo-splash-screen';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -23,19 +23,13 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-async function onInit(db: SQLiteDatabase) {
-  try {
-    await migrate(db);
-  } finally {
-    await SplashScreen.hideAsync();
-  }
-}
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
 
-  const [fontsLoaded, fontError] = useFonts({
+  // Fonts load in the background; do not gate the navigator (blank after splash).
+  useFonts({
     Manrope_600SemiBold,
     Manrope_700Bold,
     Inter_400Regular,
@@ -45,7 +39,20 @@ export default function RootLayout() {
     JetBrainsMono_600SemiBold,
   });
 
-  const fontsReady = fontsLoaded || fontError != null;
+  const onInit = useCallback(async (db: SQLiteDatabase) => {
+    try {
+      await migrate(db);
+    } finally {
+      setDbReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!dbReady && dbError == null) {
+      return;
+    }
+    void SplashScreen.hideAsync();
+  }, [dbReady, dbError]);
 
   const navigationTheme = useMemo(() => {
     const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -72,20 +79,25 @@ export default function RootLayout() {
         </ThemedView>
       ) : (
         <SQLiteProvider databaseName="my-body-scan.db" onInit={onInit} onError={setDbError}>
-          {fontsReady ? (
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="map/[region]" />
-              <Stack.Screen name="injuries/[id]" />
-              <Stack.Screen name="injuries/new" />
-              <Stack.Screen name="landmarks/index" />
-              <Stack.Screen name="landmarks/[id]" />
-              <Stack.Screen name="illnesses/new" />
-              <Stack.Screen name="illnesses/[id]" />
-              <Stack.Screen name="summary" />
-              <Stack.Screen name="backup" />
-            </Stack>
-          ) : null}
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="map/[region]" />
+            <Stack.Screen name="injuries/[id]" />
+            <Stack.Screen
+              name="injuries/new"
+              options={{
+                presentation: 'formSheet',
+                sheetAllowedDetents: [0.6, 1],
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen name="landmarks/index" />
+            <Stack.Screen name="landmarks/[id]" />
+            <Stack.Screen name="illnesses/new" />
+            <Stack.Screen name="illnesses/[id]" />
+            <Stack.Screen name="summary" />
+            <Stack.Screen name="backup" />
+          </Stack>
         </SQLiteProvider>
       )}
     </ThemeProvider>

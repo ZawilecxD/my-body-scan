@@ -11,8 +11,7 @@ import {
   overviewBadgePoint,
   overviewZonePaths,
 } from '@/domain/map-layout';
-
-const OPEN_ACCENT = '#3c87f7';
+import { useTheme } from '@/hooks/use-theme';
 
 const FRONT_OVERVIEW = require('../../assets/body-map/front-overview.png') as number;
 const BACK_OVERVIEW = require('../../assets/body-map/back-overview.png') as number;
@@ -31,6 +30,7 @@ type BodyOverviewMapProps = {
 };
 
 export function BodyOverviewMap({ side, openCounts, onZonePress }: BodyOverviewMapProps) {
+  const theme = useTheme();
   const pointerEvents = Platform.OS === 'android' ? 'box-none' : 'auto';
   const [box, setBox] = useState<Box | null>(null);
   const fitted =
@@ -86,13 +86,13 @@ export function BodyOverviewMap({ side, openCounts, onZonePress }: BodyOverviewM
                     cx={point.cx}
                     cy={point.cy}
                     r={BADGE_RADIUS}
-                    fill={OPEN_ACCENT}
+                    fill={theme.tertiary}
                     pointerEvents="none"
                   />
                   <SvgText
                     x={point.cx}
                     y={point.cy}
-                    fill="#ffffff"
+                    fill={theme.onTertiary}
                     fontSize={28}
                     fontWeight="700"
                     textAnchor="middle"

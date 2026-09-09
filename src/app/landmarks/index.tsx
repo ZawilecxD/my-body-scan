@@ -1,14 +1,23 @@
-import { Stack, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { groupLandmarksByRegion, LANDMARKS, type Region } from '@/domain/landmarks';
 
 export default function LandmarksScreen() {
   const router = useRouter();
+  const navigating = useRef(false);
   const groups = groupLandmarksByRegion(LANDMARKS);
+
+  useFocusEffect(
+    useCallback(() => {
+      navigating.current = false;
+    }, []),
+  );
 
   return (
     <>
@@ -16,29 +25,34 @@ export default function LandmarksScreen() {
       <ThemedView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.list}>
           {groups.map((group) => (
-            <ThemedView key={group.region} style={styles.section}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
+            <View key={group.region} style={styles.section}>
+              <ThemedText type="labelMd" themeColor="textSecondary">
                 {regionLabel(group.region)}
               </ThemedText>
               {group.landmarks.map((landmark) => (
                 <Pressable
                   key={landmark.id}
                   accessibilityRole="button"
-                  onPress={() =>
-                    router.replace({
+                  onPress={() => {
+                    if (navigating.current) {
+                      return;
+                    }
+                    navigating.current = true;
+                    router.push({
                       pathname: '/injuries/new',
                       params: { landmarkId: landmark.id },
-                    })
-                  }
-                  style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-                  <ThemedView type="backgroundElement" style={styles.rowInner}>
-                    <ThemedText>
-                      {landmark.name} · {landmark.side}
+                    });
+                  }}
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <Card style={styles.rowCard}>
+                    <ThemedText type="titleMd">{landmark.name}</ThemedText>
+                    <ThemedText type="bodySm" themeColor="textSecondary">
+                      {landmark.side === 'front' ? 'Front' : 'Back'}
                     </ThemedText>
-                  </ThemedView>
+                  </Card>
                 </Pressable>
               ))}
-            </ThemedView>
+            </View>
           ))}
         </ScrollView>
       </ThemedView>
@@ -53,22 +67,17 @@ function regionLabel(region: Region): string {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: Spacing.three,
+    padding: Spacing.spaceMd,
   },
   list: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.four,
+    gap: Spacing.spaceMd,
+    paddingBottom: Spacing.spaceXl,
   },
   section: {
-    gap: Spacing.two,
+    gap: Spacing.spaceXs,
   },
-  row: {
-    borderRadius: Spacing.three,
-  },
-  rowInner: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  rowCard: {
+    gap: 2,
   },
   pressed: {
     opacity: 0.7,
