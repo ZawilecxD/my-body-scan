@@ -343,7 +343,7 @@ Manual:
 
 #### Automated
 
-- [x] 4.1 Illness screens typecheck and lint
+- [x] 4.1 Illness screens typecheck and lint — 83ee62c
 
 #### Manual
 
