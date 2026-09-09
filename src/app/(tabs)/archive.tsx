@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Card, Chip } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { listArchivedInjuries } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
@@ -49,7 +50,10 @@ export default function ArchiveScreen() {
           <ThemedText>{error}</ThemedText>
         ) : injuries == null ? null : injuries.length === 0 ? (
           <ThemedView style={styles.empty}>
-            <ThemedText>No archived injuries.</ThemedText>
+            <ThemedText type="bodyLg">No archived injuries.</ThemedText>
+            <ThemedText type="bodySm" themeColor="textSecondary">
+              Archive an open injury from its detail screen to see it here.
+            </ThemedText>
           </ThemedView>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
@@ -71,18 +75,19 @@ export default function ArchiveScreen() {
                     navigating.current = true;
                     router.push(`/injuries/${injury.id}`);
                   }}
-                  style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-                  <ThemedView type="backgroundElement" style={styles.rowInner}>
-                    <ThemedText type="smallBold">{title}</ThemedText>
-                    <ThemedText themeColor="textSecondary" numberOfLines={2}>
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <Card style={styles.rowCard}>
+                    <Chip label="Archived" />
+                    <ThemedText type="titleMd">{title}</ThemedText>
+                    <ThemedText type="bodyMd" themeColor="textSecondary" numberOfLines={2}>
                       {injury.description}
                     </ThemedText>
                     {injury.archivedAt != null ? (
-                      <ThemedText type="small" themeColor="textSecondary">
+                      <ThemedText type="bodySm" themeColor="textSecondary">
                         Archived {new Date(injury.archivedAt).toLocaleString()}
                       </ThemedText>
                     ) : null}
-                  </ThemedView>
+                  </Card>
                 </Pressable>
               );
             })}
@@ -101,21 +106,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.four,
-    gap: Spacing.two,
+    padding: Spacing.spaceXl,
+    gap: Spacing.spaceXs,
   },
   list: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
+    paddingBottom: Spacing.spaceXl,
   },
-  row: {
-    borderRadius: Spacing.three,
-  },
-  rowInner: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  rowCard: {
+    gap: Spacing.space2xs,
   },
   pressed: {
     opacity: 0.7,

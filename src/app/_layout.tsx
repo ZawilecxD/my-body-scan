@@ -14,7 +14,7 @@ import { StyleSheet, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { migrate } from '@/db/migrate';
 
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +27,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
+  const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   // Fonts load in the background; do not gate the navigator (blank after splash).
   useFonts({
@@ -55,7 +56,6 @@ export default function RootLayout() {
   }, [dbReady, dbError]);
 
   const navigationTheme = useMemo(() => {
-    const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
     const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
     return {
       ...base,
@@ -69,17 +69,29 @@ export default function RootLayout() {
         notification: palette.tertiary,
       },
     };
-  }, [colorScheme]);
+  }, [colorScheme, palette]);
 
   return (
     <ThemeProvider value={navigationTheme}>
       {dbError != null ? (
-        <ThemedView style={styles.screen}>
-          <ThemedText>Cannot open the injury database: {dbError.message}</ThemedText>
+        <ThemedView type="background" style={styles.screen}>
+          <ThemedText type="titleMd">Cannot open the injury database</ThemedText>
+          <ThemedText themeColor="textSecondary">{dbError.message}</ThemedText>
         </ThemedView>
       ) : (
         <SQLiteProvider databaseName="my-body-scan.db" onInit={onInit} onError={setDbError}>
-          <Stack>
+          <Stack
+            screenOptions={{
+              headerShadowVisible: false,
+              headerStyle: { backgroundColor: palette.surface },
+              headerTintColor: palette.onSurface,
+              headerTitleStyle: {
+                fontFamily: Fonts.display,
+                fontSize: 20,
+                fontWeight: '600',
+              },
+              contentStyle: { backgroundColor: palette.background },
+            }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="map/[region]" />
             <Stack.Screen name="injuries/[id]" />
@@ -107,6 +119,8 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: Spacing.three,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
+    justifyContent: 'center',
   },
 });

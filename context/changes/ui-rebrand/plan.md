@@ -353,7 +353,7 @@ Manual:
 
 #### Automated
 
-- [ ] 5.1 Remaining screens typecheck and lint
+- [x] 5.1 Remaining screens typecheck and lint
 
 #### Manual
 

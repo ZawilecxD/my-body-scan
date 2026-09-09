@@ -4,10 +4,11 @@ import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppButton, Card, Chip, SegmentedControl } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { loadSummary } from '@/db/summary';
 import {
@@ -18,6 +19,7 @@ import {
   statusScopeLabel,
   windowPresetLabel,
   type SummaryConfig,
+  type SummaryWindowPreset,
 } from '@/domain/summary';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -113,142 +115,116 @@ export default function SummaryScreen() {
   }
 
   const canShare = previewText != null && previewHtml != null;
+  const windowOptions = SUMMARY_WINDOW_PRESETS.map((preset) => ({
+    value: preset,
+    label: windowPresetLabel(preset),
+  }));
 
   return (
     <>
       <Stack.Screen options={{ title: 'Summary' }} />
       <ThemedView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText themeColor="textSecondary">
-            Build an English briefing for a physio visit. Generate to preview, then share as text or PDF.
+          <Card style={styles.intro}>
+            <ThemedText type="titleMd">Physio briefing</ThemedText>
+            <ThemedText type="bodyMd" themeColor="textSecondary">
+              Generate a clean, focused brief of your open and past injuries to share with your
+              physical therapist or trainer.
+            </ThemedText>
+          </Card>
+
+          <ThemedText type="labelMd" themeColor="textSecondary">
+            Time window
           </ThemedText>
+          <SegmentedControl
+            options={windowOptions}
+            value={config.windowPreset}
+            onChange={(preset: SummaryWindowPreset) => updateConfig({ windowPreset: preset })}
+          />
 
-          <ThemedText type="smallBold">Time window</ThemedText>
-          <ThemedView style={styles.wrapRow}>
-            {SUMMARY_WINDOW_PRESETS.map((preset) => (
-              <OptionChip
-                key={preset}
-                label={windowPresetLabel(preset)}
-                selected={config.windowPreset === preset}
-                selectedBackground={theme.backgroundSelected}
-                onPress={() => updateConfig({ windowPreset: preset })}
-              />
-            ))}
-          </ThemedView>
-
-          <ThemedText type="smallBold">Status scope</ThemedText>
-          <ThemedView style={styles.wrapRow}>
-            <OptionChip
+          <ThemedText type="labelMd" themeColor="textSecondary">
+            Status scope
+          </ThemedText>
+          <View style={styles.wrapRow}>
+            <Chip
               label={statusScopeLabel(false)}
               selected={!config.includeArchived}
-              selectedBackground={theme.backgroundSelected}
               onPress={() => updateConfig({ includeArchived: false })}
             />
-            <OptionChip
+            <Chip
               label={statusScopeLabel(true)}
               selected={config.includeArchived}
-              selectedBackground={theme.backgroundSelected}
               onPress={() => updateConfig({ includeArchived: true })}
             />
-          </ThemedView>
+          </View>
 
-          <ThemedText type="smallBold">Sections</ThemedText>
-          <CheckboxRow
-            label="Description"
-            checked={config.includeDescription}
-            onPress={() => updateConfig({ includeDescription: !config.includeDescription })}
-          />
-          <CheckboxRow
-            label="Latest severity"
-            checked={config.includeLatestSeverity}
-            onPress={() => updateConfig({ includeLatestSeverity: !config.includeLatestSeverity })}
-          />
-          <CheckboxRow
-            label="Solutions"
-            checked={config.includeSolutions}
-            onPress={() => updateConfig({ includeSolutions: !config.includeSolutions })}
-          />
-          <CheckboxRow
-            label="Comments"
-            checked={config.includeComments}
-            onPress={() => updateConfig({ includeComments: !config.includeComments })}
-          />
+          <ThemedText type="labelMd" themeColor="textSecondary">
+            Sections
+          </ThemedText>
+          <Card style={styles.sections}>
+            <CheckboxRow
+              label="Description"
+              checked={config.includeDescription}
+              onPress={() => updateConfig({ includeDescription: !config.includeDescription })}
+            />
+            <CheckboxRow
+              label="Latest severity"
+              checked={config.includeLatestSeverity}
+              onPress={() =>
+                updateConfig({ includeLatestSeverity: !config.includeLatestSeverity })
+              }
+            />
+            <CheckboxRow
+              label="Solutions"
+              checked={config.includeSolutions}
+              onPress={() => updateConfig({ includeSolutions: !config.includeSolutions })}
+            />
+            <CheckboxRow
+              label="Comments"
+              checked={config.includeComments}
+              onPress={() => updateConfig({ includeComments: !config.includeComments })}
+            />
+          </Card>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={onGenerate}
-            style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.backgroundSelected },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold">Generate</ThemedText>
-          </Pressable>
+          <AppButton label="Generate" onPress={onGenerate} />
 
-          <ThemedView style={styles.actionRow}>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canShare}
-              onPress={onShareText}
-              style={({ pressed }) => [
-                styles.action,
-                styles.actionFlex,
-                { backgroundColor: theme.backgroundSelected, opacity: canShare ? 1 : 0.4 },
-                pressed && canShare && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold">Share text</ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canShare}
-              onPress={onSharePdf}
-              style={({ pressed }) => [
-                styles.action,
-                styles.actionFlex,
-                { backgroundColor: theme.backgroundSelected, opacity: canShare ? 1 : 0.4 },
-                pressed && canShare && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold">Share PDF</ThemedText>
-            </Pressable>
-          </ThemedView>
-
-          {error != null ? <ThemedText>{error}</ThemedText> : null}
+          {error != null ? <ThemedText themeColor="error">{error}</ThemedText> : null}
 
           {previewText != null ? (
-            <ThemedView type="backgroundElement" style={styles.preview}>
-              <ThemedText type="smallBold">Preview</ThemedText>
-              <ThemedText>{previewText}</ThemedText>
-            </ThemedView>
+            <Card style={styles.preview} elevated>
+              <ThemedText type="titleMd">Live document preview</ThemedText>
+              <ThemedText type="dataSm" themeColor="textSecondary">
+                {windowPresetLabel(config.windowPreset)} · {statusScopeLabel(config.includeArchived)}
+              </ThemedText>
+              <ThemedText type="bodyMd">{previewText}</ThemedText>
+            </Card>
           ) : null}
         </ScrollView>
+
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: theme.surface,
+              borderTopColor: theme.outlineVariant,
+            },
+          ]}>
+          <AppButton
+            label="Share text"
+            variant="ghost"
+            disabled={!canShare}
+            onPress={onShareText}
+            style={styles.footerButton}
+          />
+          <AppButton
+            label="Export PDF"
+            disabled={!canShare}
+            onPress={onSharePdf}
+            style={styles.footerButton}
+          />
+        </View>
       </ThemedView>
     </>
-  );
-}
-
-function OptionChip({
-  label,
-  selected,
-  selectedBackground,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  selectedBackground: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.chip,
-        selected && { backgroundColor: selectedBackground },
-        pressed && styles.pressed,
-      ]}>
-      <ThemedText type={selected ? 'smallBold' : 'small'}>{label}</ThemedText>
-    </Pressable>
   );
 }
 
@@ -261,14 +237,29 @@ function CheckboxRow({
   checked: boolean;
   onPress: () => void;
 }) {
+  const theme = useTheme();
   return (
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
+      hitSlop={Spacing.one}
       onPress={onPress}
       style={({ pressed }) => [styles.checkboxRow, pressed && styles.pressed]}>
-      <ThemedText>{checked ? '[x]' : '[ ]'}</ThemedText>
-      <ThemedText>{label}</ThemedText>
+      <View
+        style={[
+          styles.checkbox,
+          {
+            borderColor: checked ? theme.primary : theme.outlineVariant,
+            backgroundColor: checked ? theme.primaryContainer : 'transparent',
+          },
+        ]}>
+        {checked ? (
+          <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
+            ✓
+          </ThemedText>
+        ) : null}
+      </View>
+      <ThemedText type="bodyMd">{label}</ThemedText>
     </Pressable>
   );
 }
@@ -278,41 +269,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Spacing.three,
-    gap: Spacing.three,
-    paddingBottom: Spacing.four,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
+    paddingBottom: Spacing.spaceXl,
+  },
+  intro: {
+    gap: Spacing.spaceXs,
   },
   wrapRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: Spacing.spaceXs,
   },
-  chip: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+  sections: {
+    gap: Spacing.spaceXs,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.spaceSm,
+    minHeight: 44,
   },
-  action: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 1.5,
     alignItems: 'center',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  actionFlex: {
-    flex: 1,
+    justifyContent: 'center',
   },
   preview: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
+    gap: Spacing.spaceXs,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: Spacing.spaceXs,
+    paddingHorizontal: Spacing.spaceMd,
+    paddingVertical: Spacing.spaceSm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  footerButton: {
+    flex: 1,
   },
   pressed: {
     opacity: 0.7,

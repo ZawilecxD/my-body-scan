@@ -2,7 +2,7 @@
 change_id: ui-rebrand
 title: Redesign app UI for clarity and practical daily use
 type: feature
-status: implementing
+status: implemented
 created: 2026-09-08
 updated: 2026-09-09
 archived_at: null

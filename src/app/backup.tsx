@@ -4,17 +4,16 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppButton, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { dumpBackup, parseBackupJson, replaceFromBackup } from '@/db/backup';
-import { useTheme } from '@/hooks/use-theme';
 
 export default function BackupScreen() {
   const db = useSQLiteContext();
-  const theme = useTheme();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const exporting = useRef(false);
@@ -94,35 +93,19 @@ export default function BackupScreen() {
     <>
       <Stack.Screen options={{ title: 'Backup' }} />
       <ThemedView style={styles.screen}>
-        <ThemedText themeColor="textSecondary">
-          Export all injury data to a JSON file, or restore from a previous export. Restore replaces all
-          local injury data.
-        </ThemedText>
+        <Card style={styles.explainer}>
+          <ThemedText type="titleMd">Local backup</ThemedText>
+          <ThemedText type="bodyMd" themeColor="textSecondary">
+            Export all injury data to a JSON file, or restore from a previous export. Restore replaces
+            all local injury data.
+          </ThemedText>
+        </Card>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={onExport}
-          style={({ pressed }) => [
-            styles.action,
-            { backgroundColor: theme.backgroundSelected },
-            pressed && styles.pressed,
-          ]}>
-          <ThemedText type="smallBold">Export</ThemedText>
-        </Pressable>
+        <AppButton label="Export" onPress={onExport} />
+        <AppButton label="Restore" variant="ghost" onPress={onRestore} />
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={onRestore}
-          style={({ pressed }) => [
-            styles.action,
-            { backgroundColor: theme.backgroundSelected },
-            pressed && styles.pressed,
-          ]}>
-          <ThemedText type="smallBold">Restore</ThemedText>
-        </Pressable>
-
-        {message != null ? <ThemedText>{message}</ThemedText> : null}
-        {error != null ? <ThemedText>{error}</ThemedText> : null}
+        {message != null ? <ThemedText type="bodyMd">{message}</ThemedText> : null}
+        {error != null ? <ThemedText themeColor="error">{error}</ThemedText> : null}
       </ThemedView>
     </>
   );
@@ -150,15 +133,11 @@ function formatFileStamp(date: Date): string {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: Spacing.three,
-    gap: Spacing.three,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
   },
-  action: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    alignItems: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
+  explainer: {
+    gap: Spacing.spaceXs,
+    marginBottom: Spacing.spaceXs,
   },
 });
