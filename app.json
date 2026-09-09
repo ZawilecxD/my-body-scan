@@ -34,7 +34,17 @@
         }
       ],
       "expo-sqlite",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["en", "pl"],
+            "android": ["en", "pl"]
+          },
+          "supportsRTL": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
