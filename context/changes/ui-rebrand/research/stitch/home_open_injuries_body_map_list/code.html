@@ -1,0 +1,476 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Open injuries - Somatic Log</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#bec6e0",
+            "on-secondary-fixed": "#131b2e",
+            "surface-tint": "#006a63",
+            "on-surface-variant": "#3e4947",
+            "on-primary": "#ffffff",
+            "surface-container": "#e5eeff",
+            "primary-fixed-dim": "#80d5cb",
+            "inverse-surface": "#213145",
+            "on-error-container": "#93000a",
+            "surface-dim": "#cbdbf5",
+            "tertiary-fixed-dim": "#ffb690",
+            "on-tertiary-fixed-variant": "#783200",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#00504a",
+            "surface-bright": "#f8f9ff",
+            "tertiary-container": "#af4c00",
+            "surface-container-low": "#eff4ff",
+            "on-secondary": "#ffffff",
+            "secondary": "#565e74",
+            "inverse-primary": "#80d5cb",
+            "tertiary": "#893a00",
+            "tertiary-fixed": "#ffdbca",
+            "primary": "#005c55",
+            "on-tertiary-container": "#ffe6da",
+            "surface-container-highest": "#d3e4fe",
+            "on-background": "#0b1c30",
+            "on-error": "#ffffff",
+            "primary-container": "#0f766e",
+            "outline": "#6e7977",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#d3e4fe",
+            "primary-fixed": "#9cf2e8",
+            "surface": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "background": "#f8f9ff",
+            "secondary-fixed": "#dae2fd",
+            "on-primary-container": "#a3faef",
+            "on-tertiary-fixed": "#341100",
+            "outline-variant": "#bdc9c6",
+            "secondary-container": "#dae2fd",
+            "on-secondary-container": "#5c647a",
+            "on-secondary-fixed-variant": "#3f465c",
+            "on-tertiary": "#ffffff",
+            "surface-container-high": "#dce9ff",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container-lowest": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-3xl": "3rem",
+            "margin-tablet": "2rem",
+            "space-lg": "1.25rem",
+            "space-2xs": "0.25rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.75rem",
+            "gutter-tablet": "1.5rem",
+            "space-xl": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.5rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Manrope"],
+            "title-md": ["Inter"],
+            "headline-lg": ["Manrope"],
+            "headline-md": ["Manrope"],
+            "data-lg": ["JetBrains Mono"],
+            "body-md": ["Inter"],
+            "data-sm": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "body-sm": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "data-lg": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "data-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top App Bar with Anchor Logic -->
+<header class="bg-surface flex justify-between items-center h-14 w-full px-space-md mx-auto sticky top-0 z-40">
+<div class="flex items-center gap-space-xs">
+<h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Open injuries</h1>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-data-sm font-data-sm px-space-xs py-0.5 rounded-full border border-tertiary-fixed-dim/40 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>
+        3 active
+      </span>
+</div>
+<!-- Header Action Icons -->
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button aria-label="Physio Summary" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:scale-95 transition-all text-secondary" title="Physio Summary">
+<span class="material-symbols-outlined text-[20px]" data-icon="description">description</span>
+</button>
+<button aria-label="Backup" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:scale-95 transition-all text-secondary" title="Backup">
+<span class="material-symbols-outlined text-[20px]" data-icon="cloud_download">cloud_download</span>
+</button>
+<button aria-label="Archive" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:scale-95 transition-all text-secondary" title="Archive">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+</button>
+</div>
+</header>
+<!-- Main Work Canvas -->
+<main class="flex-1 w-full max-w-md mx-auto px-space-margin-mobile flex flex-col gap-space-sm pb-28 pt-space-xs">
+<!-- View Switcher & Orientation Controls -->
+<section class="flex flex-col gap-space-xs">
+<!-- Primary Segmented Control: [ Graphic | List ] -->
+<div class="w-full bg-surface-container-low p-1 rounded-xl flex items-center justify-between border border-outline-variant/30">
+<button class="flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-on-surface shadow-sm" id="tabGraphic" onclick="switchView('graphic')">
+<span class="material-symbols-outlined text-[18px]" data-icon="accessibility_new">accessibility_new</span>
+          Graphic
+        </button>
+<button class="flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface" id="tabList" onclick="switchView('list')">
+<span class="material-symbols-outlined text-[18px]" data-icon="format_list_bulleted">format_list_bulleted</span>
+          List (3)
+        </button>
+</div>
+<!-- Secondary Control (Graphic Mode): [ Front | Back ] -->
+<div class="flex justify-between items-center px-1" id="orientationToggle">
+<div class="inline-flex bg-surface-container-low p-0.5 rounded-lg border border-outline-variant/30">
+<button class="px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all bg-surface-container-lowest text-primary font-semibold shadow-xs" id="btnFront" onclick="switchOrientation('front')">
+            Anterior (Front)
+          </button>
+<button class="px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all text-secondary hover:text-on-surface" id="btnBack" onclick="switchOrientation('back')">
+            Posterior (Back)
+          </button>
+</div>
+<span class="text-data-sm font-data-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="touch_app">touch_app</span>
+          Tap region to inspect
+        </span>
+</div>
+</section>
+<!-- VIEW 1: GRAPHIC ANATOMICAL VIEW -->
+<div class="flex flex-col gap-space-md" id="graphicView">
+<!-- Interactive Silhouette Viewport -->
+<div class="relative w-full bg-surface-container-lowest rounded-xl border border-outline-variant/30 flex items-center justify-center overflow-hidden h-[400px]"><!-- Subtle anatomical grid backdrop -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-size: 20px 20px; background-image: linear-gradient(to right, rgb(15, 118, 110) 1px, transparent 1px), linear-gradient(rgb(15, 118, 110) 1px, transparent 1px);"></div>
+
+<!-- Authentic Anatomical Body Map Image Asset -->
+<div class="relative z-10 flex items-center justify-center h-full w-full py-2">
+  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPiBQsG8BHMQhTA1EPKRE-uNYJ7_pmQHuBmKfUv9Nbv2hoGKDKty3wt2tjcArszmJ7y2VHUS_oRGu9XCCtclLV_-9vTSRl1_ar0Tr-rniiDzmA9JBsazzYOLB7BG4w4vSR4X9lhKolx3CvskftO5qnRV5DtpcaJbBrw0ezprd5VeL00I3iM7nRbelSZi0d_zKCY2TEHpH3AqKDOiV1_psbR2TlEBSZSlN7aNSYoL5JH1bzzN22SrvuUkkTruhNLTIQ" alt="Anatomical Body Graphic" class="w-auto h-[380px] max-h-[400px] object-contain mx-auto select-none pointer-events-none drop-shadow-sm">
+</div>
+
+<!-- Tap Region 1: Head / Neck Overlay & Badge -->
+<div class="absolute top-[18px] left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+  <button class="relative w-14 h-14 rounded-full flex items-center justify-center group focus:outline-hidden" title="Head &amp; Neck: 0 injuries">
+    <span class="absolute -top-1 right-1 bg-surface-container-high text-secondary text-data-sm font-data-sm w-5 h-5 rounded-full flex items-center justify-center border border-surface-container-lowest">0</span>
+  </button>
+</div>
+
+<!-- Tap Region 2: Torso Overlay & Badge -->
+<div class="absolute top-[115px] left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+  <button class="relative w-20 h-24 rounded-lg flex items-center justify-center group focus:outline-hidden" title="Torso / Chest: 0 injuries">
+    <span class="absolute top-1 right-0 bg-surface-container-high text-secondary text-data-sm font-data-sm w-5 h-5 rounded-full flex items-center justify-center border border-surface-container-lowest">0</span>
+  </button>
+</div>
+
+<!-- Tap Region 3: Forearm / Wrist Active Marker -->
+<div class="absolute top-[148px] left-[42px] z-20 flex items-center justify-center">
+  <button class="relative group cursor-pointer focus:outline-hidden" title="Right Forearm: 2 injuries">
+    <!-- Pulsing hotspot ring -->
+    <span class="absolute -inset-2 rounded-full bg-tertiary-container/20 animate-ping"></span>
+    <!-- Pin center -->
+    <span class="relative w-7 h-7 rounded-full bg-tertiary text-on-tertiary text-data-sm font-data-sm font-semibold flex items-center justify-center ring-2 ring-surface-container-lowest shadow-sm">
+      2
+    </span>
+  </button>
+</div>
+
+<!-- Tap Region 4: Knee / Leg Active Marker -->
+<div class="absolute top-[260px] right-[62px] z-20 flex items-center justify-center">
+  <button class="relative group cursor-pointer focus:outline-hidden" title="Right Knee: 1 injury">
+    <span class="relative w-7 h-7 rounded-full bg-tertiary text-on-tertiary text-data-sm font-data-sm font-semibold flex items-center justify-center ring-2 ring-surface-container-lowest shadow-sm">
+      1
+    </span>
+  </button>
+</div>
+
+<!-- Region Label Tag Indicators -->
+<div class="absolute bottom-2 left-3 z-20 bg-surface-container-low/80 backdrop-blur-xs px-2 py-1 rounded-md border border-outline-variant/30 flex items-center gap-1.5 text-data-sm font-data-sm text-on-surface-variant">
+  <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+  <span class="">Amber = Active Open Log</span>
+</div></div>
+<!-- Quick Overview Strip (Bottom of Silhouette) -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-1">
+<h2 class="text-title-md font-title-md text-on-surface">Immediate Focus</h2>
+<span class="text-data-sm font-data-sm text-secondary">Swipe to inspect</span>
+</div>
+<!-- Horizontal Scrollable Cards -->
+<div class="flex gap-space-xs overflow-x-auto pb-1 scrollbar-none snap-x">
+<!-- Card 1: Forearm -->
+<article class="snap-start shrink-0 w-[84%] bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 flex flex-col justify-between shadow-xs">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-data-sm font-data-sm px-2 py-0.5 rounded-md font-semibold">
+                  Forearm · Front
+                </span>
+<span class="text-data-sm font-data-sm text-error font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="flag">flag</span>
+                  VAS 5/10
+                </span>
+</div>
+<p class="text-body-md font-body-md text-on-surface mt-1 leading-snug">
+                Pain on wrist extension during heavy barbell deadlifts.
+              </p>
+</div>
+<div class="flex items-center justify-between mt-3 pt-2 border-t border-outline-variant/20 text-data-sm font-data-sm text-secondary">
+<span class="">Updated: Yesterday</span>
+<span class="text-primary font-semibold flex items-center gap-0.5">
+                View Log <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</span>
+</div>
+</article>
+<!-- Card 2: Knee -->
+<article class="snap-start shrink-0 w-[84%] bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 flex flex-col justify-between shadow-xs">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-data-sm font-data-sm px-2 py-0.5 rounded-md font-semibold">
+                  Knee · Front
+                </span>
+<span class="text-data-sm font-data-sm text-tertiary font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="flag">flag</span>
+                  VAS 4/10
+                </span>
+</div>
+<p class="text-body-md font-body-md text-on-surface mt-1 leading-snug">
+                Patellar tendon soreness after running downhill.
+              </p>
+</div>
+<div class="flex items-center justify-between mt-3 pt-2 border-t border-outline-variant/20 text-data-sm font-data-sm text-secondary">
+<span class="">Updated: 3d ago</span>
+<span class="text-primary font-semibold flex items-center gap-0.5">
+                View Log <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</span>
+</div>
+</article>
+</div>
+</section>
+</div>
+<!-- VIEW 2: GROUPED LIST VIEW (Hidden by default, toggled via primary control) -->
+<div class="hidden flex-col gap-space-lg" id="listView">
+<!-- Group: Arms (2) -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="fitness_center">fitness_center</span>
+<h2 class="text-title-md font-title-md text-on-surface">Arms</h2>
+</div>
+<span class="text-data-sm font-data-sm bg-surface-container px-2 py-0.5 rounded-full text-secondary">2 entries</span>
+</div>
+<!-- List Card 1 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 flex flex-col gap-space-sm shadow-xs">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-title-md font-title-md text-on-surface">Right Flexor / Forearm</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-data-sm font-data-sm px-1.5 py-0.2 rounded">Anterior</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+                Sharp twinge upon wrist extension during deadlifts; tender near medial epicondyle.
+              </p>
+</div>
+<span class="shrink-0 text-data-sm font-data-sm text-error bg-error-container/40 text-on-error-container px-2 py-0.5 rounded-md font-semibold">
+              VAS 5
+            </span>
+</div>
+<!-- Prescribed Solution Link -->
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2 text-data-sm font-data-sm text-on-surface">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="smart_display">smart_display</span>
+<span class="truncate font-medium">Eccentric Wrist Flexion Tyler Twist</span>
+</div>
+<a class="shrink-0 text-primary text-data-sm font-data-sm font-semibold flex items-center hover:underline" href="#video-demo">
+              Open <span class="material-symbols-outlined text-[14px]" data-icon="launch">launch</span>
+</a>
+</div>
+<div class="flex items-center justify-between text-data-sm font-data-sm text-secondary">
+<span class="">Logged 2 days ago</span>
+<button class="text-primary font-semibold flex items-center gap-0.5">
+              Edit Treatment <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- List Card 2 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 flex flex-col gap-space-sm shadow-xs">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-title-md font-title-md text-on-surface">Left Bicep Tendon</span>
+<span class="bg-secondary-fixed text-on-secondary-fixed text-data-sm font-data-sm px-1.5 py-0.2 rounded">Anterior</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+                Dull ache in the anterior shoulder groove during bench press descent.
+              </p>
+</div>
+<span class="shrink-0 text-data-sm font-data-sm text-tertiary bg-tertiary-fixed/60 text-on-tertiary-fixed px-2 py-0.5 rounded-md font-semibold">
+              VAS 3
+            </span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2 text-data-sm font-data-sm text-on-surface">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="smart_display">smart_display</span>
+<span class="truncate font-medium">Rotator Cuff Isometric Holds (Band)</span>
+</div>
+<a class="shrink-0 text-primary text-data-sm font-data-sm font-semibold flex items-center hover:underline" href="#video-demo-2">
+              Open <span class="material-symbols-outlined text-[14px]" data-icon="launch">launch</span>
+</a>
+</div>
+<div class="flex items-center justify-between text-data-sm font-data-sm text-secondary">
+<span class="">Logged 5 days ago</span>
+<button class="text-primary font-semibold flex items-center gap-0.5">
+              Edit Treatment <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Group: Legs (1) -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="directions_walk">directions_walk</span>
+<h2 class="text-title-md font-title-md text-on-surface">Legs</h2>
+</div>
+<span class="text-data-sm font-data-sm bg-surface-container px-2 py-0.5 rounded-full text-secondary">1 entry</span>
+</div>
+<!-- List Card 3 -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 flex flex-col gap-space-sm shadow-xs">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-title-md font-title-md text-on-surface">Right Patellar Tendon</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-data-sm font-data-sm px-1.5 py-0.2 rounded">Anterior</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+                Stiff upon first morning steps and localized tenderness directly below patella.
+              </p>
+</div>
+<span class="shrink-0 text-data-sm font-data-sm text-tertiary bg-tertiary-fixed/60 text-on-tertiary-fixed px-2 py-0.5 rounded-md font-semibold">
+              VAS 4
+            </span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-2 text-data-sm font-data-sm text-on-surface">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="smart_display">smart_display</span>
+<span class="truncate font-medium">Spanish Squat Iso-Hold Protocols</span>
+</div>
+<a class="shrink-0 text-primary text-data-sm font-data-sm font-semibold flex items-center hover:underline" href="#video-demo-3">
+              Open <span class="material-symbols-outlined text-[14px]" data-icon="launch">launch</span>
+</a>
+</div>
+<div class="flex items-center justify-between text-data-sm font-data-sm text-secondary">
+<span class="">Logged 3 days ago</span>
+<button class="text-primary font-semibold flex items-center gap-0.5">
+              Edit Treatment <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</article>
+</section>
+</div>
+</main>
+<!-- Contextual Floating Action Button (+ Log Injury) -->
+<aside class="fixed bottom-18 right-4 z-30">
+<button class="flex items-center gap-2 bg-primary-container text-on-primary font-label-md text-label-md px-5 py-3.5 rounded-full shadow-lg hover:bg-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+<span class="">Log Injury</span>
+</button>
+</aside>
+<!-- Bottom Nav Bar from Shared Components Blueprint -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-space-xs py-space-xs pb-safe bg-surface border-t border-outline-variant dark:border-outline-variant shadow-none">
+<!-- Body Map (Active Tab) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-space-md py-space-2xs active:scale-95 transition-transform duration-150" href="#bodymap">
+<span class="material-symbols-outlined text-[22px]" data-icon="accessibility_new">accessibility_new</span>
+<span class="text-label-md font-label-md">Body Map</span>
+</a>
+<!-- Log -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-2xs active:scale-95 transition-transform duration-150 hover:bg-surface-container-high" href="#log">
+<span class="material-symbols-outlined text-[22px]" data-icon="assignment">assignment</span>
+<span class="text-label-md font-label-md">Log</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-2xs active:scale-95 transition-transform duration-150 hover:bg-surface-container-high" href="#history">
+<span class="material-symbols-outlined text-[22px]" data-icon="history">history</span>
+<span class="text-label-md font-label-md">History</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-2xs active:scale-95 transition-transform duration-150 hover:bg-surface-container-high" href="#settings">
+<span class="material-symbols-outlined text-[22px]" data-icon="settings">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+</nav>
+<!-- Interactive State Switching Logic -->
+<script>
+    function switchView(mode) {
+      const graphicView = document.getElementById('graphicView');
+      const listView = document.getElementById('listView');
+      const tabGraphic = document.getElementById('tabGraphic');
+      const tabList = document.getElementById('tabList');
+      const orientationToggle = document.getElementById('orientationToggle');
+
+      if (mode === 'graphic') {
+        graphicView.classList.remove('hidden');
+        listView.classList.add('hidden');
+        orientationToggle.classList.remove('opacity-0', 'pointer-events-none');
+
+        tabGraphic.className = "flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-on-surface shadow-sm";
+        tabList.className = "flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface";
+      } else {
+        graphicView.classList.add('hidden');
+        listView.classList.remove('hidden');
+        orientationToggle.classList.add('opacity-0', 'pointer-events-none');
+
+        tabList.className = "flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-on-surface shadow-sm";
+        tabGraphic.className = "flex-1 py-1.5 px-space-sm rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface";
+      }
+    }
+
+    function switchOrientation(side) {
+      const btnFront = document.getElementById('btnFront');
+      const btnBack = document.getElementById('btnBack');
+
+      if (side === 'front') {
+        btnFront.className = "px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all bg-surface-container-lowest text-primary font-semibold shadow-xs";
+        btnBack.className = "px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all text-secondary hover:text-on-surface";
+      } else {
+        btnBack.className = "px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all bg-surface-container-lowest text-primary font-semibold shadow-xs";
+        btnFront.className = "px-space-md py-1 rounded-md text-data-sm font-data-sm transition-all text-secondary hover:text-on-surface";
+      }
+    }
+  </script>
+
+
+</body></html>

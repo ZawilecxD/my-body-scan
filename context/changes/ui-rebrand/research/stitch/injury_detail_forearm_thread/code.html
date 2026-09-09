@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Injury Detail - Forearm (Right / Front)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#bec6e0",
+            "on-secondary-fixed": "#131b2e",
+            "surface-tint": "#006a63",
+            "on-surface-variant": "#3e4947",
+            "on-primary": "#ffffff",
+            "surface-container": "#e5eeff",
+            "primary-fixed-dim": "#80d5cb",
+            "inverse-surface": "#213145",
+            "on-error-container": "#93000a",
+            "surface-dim": "#cbdbf5",
+            "tertiary-fixed-dim": "#ffb690",
+            "on-tertiary-fixed-variant": "#783200",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#00504a",
+            "surface-bright": "#f8f9ff",
+            "tertiary-container": "#af4c00",
+            "surface-container-low": "#eff4ff",
+            "on-secondary": "#ffffff",
+            "secondary": "#565e74",
+            "inverse-primary": "#80d5cb",
+            "tertiary": "#893a00",
+            "tertiary-fixed": "#ffdbca",
+            "primary": "#005c55",
+            "on-tertiary-container": "#ffe6da",
+            "surface-container-highest": "#d3e4fe",
+            "on-background": "#0b1c30",
+            "on-error": "#ffffff",
+            "primary-container": "#0f766e",
+            "outline": "#6e7977",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#d3e4fe",
+            "primary-fixed": "#9cf2e8",
+            "surface": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "background": "#f8f9ff",
+            "secondary-fixed": "#dae2fd",
+            "on-primary-container": "#a3faef",
+            "on-tertiary-fixed": "#341100",
+            "outline-variant": "#bdc9c6",
+            "secondary-container": "#dae2fd",
+            "on-secondary-container": "#5c647a",
+            "on-secondary-fixed-variant": "#3f465c",
+            "on-tertiary": "#ffffff",
+            "surface-container-high": "#dce9ff",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container-lowest": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-3xl": "3rem",
+            "margin-tablet": "2rem",
+            "space-lg": "1.25rem",
+            "space-2xs": "0.25rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.75rem",
+            "gutter-tablet": "1.5rem",
+            "space-xl": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.5rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Manrope"],
+            "title-md": ["Inter"],
+            "headline-lg": ["Manrope"],
+            "headline-md": ["Manrope"],
+            "data-lg": ["JetBrains Mono"],
+            "body-md": ["Inter"],
+            "data-sm": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "body-sm": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "title-md": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600"}],
+            "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "data-lg": ["16px", {"lineHeight": "22px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "data-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "label-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    body {
+      background-color: #f8f9ff;
+      color: #0b1c30;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex justify-center selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Mobile Screen Shell: Focused task detail page suppressing Global Navigation Bar and FAB -->
+<main class="w-full max-w-[430px] min-h-screen bg-background border-x border-outline-variant/30 flex flex-col pb-28 relative shadow-2xl">
+<!-- Top App Bar (Task Header) -->
+<header class="sticky top-0 z-40 bg-surface/95 backdrop-blur-md px-space-md py-space-xs flex items-center justify-between border-b border-outline-variant/30">
+<div class="flex items-center gap-space-xs">
+<button aria-label="Go Back" class="w-10 h-10 -ml-1.5 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-headline-md text-on-surface tracking-tight">Forearm</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-data-sm bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-fixed-dim tracking-wider font-semibold">
+              OPEN
+            </span>
+</div>
+<span class="font-data-sm text-data-sm text-secondary -mt-0.5">Right / Anterior Front</span>
+</div>
+</div>
+<button class="inline-flex items-center gap-1 px-space-xs py-1 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container active:opacity-80 transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-base" data-icon="archive">archive</span>
+<span>Archive</span>
+</button>
+</header>
+<div class="px-space-md pt-space-md flex flex-col gap-space-lg">
+<!-- Context Landmark & Meta Banner -->
+<section class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-space-md py-space-sm shadow-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary border border-outline-variant/40">
+<span class="material-symbols-outlined text-lg" data-icon="accessibility_new">accessibility_new</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Landmark #04 · Upper Limb</span>
+<span class="font-data-sm text-data-sm text-secondary">Logged Oct 14 · 18 days active</span>
+</div>
+</div>
+<div class="flex items-center text-primary-container">
+<span class="material-symbols-outlined text-lg" data-icon="radar">radar</span>
+</div>
+</section>
+<!-- Injury Description Section -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="edit_note">edit_note</span>
+            Symptom Description
+          </h2>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-md text-label-md py-0.5 px-1.5 rounded hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-xs" data-icon="edit">edit</span>
+            Edit
+          </button>
+</div>
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm relative">
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+            Sharp pain along the extensor carpi radialis during heavy pull days and typing fatigue. Dull ache on wrist flexion.
+          </p>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant/30 flex flex-wrap gap-space-2xs">
+<span class="font-data-sm text-data-sm bg-surface-container px-2 py-0.5 rounded text-secondary border border-outline-variant/40">#ExtensorTendon</span>
+<span class="font-data-sm text-data-sm bg-surface-container px-2 py-0.5 rounded text-secondary border border-outline-variant/40">#PullMechanics</span>
+<span class="font-data-sm text-data-sm bg-surface-container px-2 py-0.5 rounded text-secondary border border-outline-variant/40">#TypingLoad</span>
+</div>
+</article>
+</section>
+<!-- Severity Trend Section (0-10) -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="show_chart">show_chart</span>
+            Severity Trend (0–10)
+          </h2>
+<span class="font-label-md text-label-md text-secondary">Discrete Log</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<!-- Sparkline & Metrics Bar -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-data-sm text-data-sm text-secondary uppercase tracking-wider">Current Score</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-data-lg text-2xl font-bold text-tertiary-container">4</span>
+<span class="font-data-sm text-data-sm text-secondary">/ 10</span>
+<span class="ml-2 font-data-sm text-[11px] text-primary bg-primary-fixed/40 px-1.5 py-0.2 rounded font-semibold">-3 since onset</span>
+</div>
+</div>
+<!-- Sparkline Visual Projection -->
+<div class="flex flex-col items-end">
+<div class="h-10 w-32 flex items-end justify-between px-1 border-b border-outline-variant/40 relative">
+<!-- Data Point 1: 7 -->
+<div class="flex flex-col items-center gap-0.5" title="Oct 14: 7">
+<span class="w-2 h-2 rounded-full bg-tertiary ring-2 ring-surface-container-lowest"></span>
+<div class="w-1 bg-tertiary/30 rounded-t h-7"></div>
+</div>
+<!-- Data Point 2: 6 -->
+<div class="flex flex-col items-center gap-0.5" title="Oct 20: 6">
+<span class="w-2 h-2 rounded-full bg-tertiary ring-2 ring-surface-container-lowest"></span>
+<div class="w-1 bg-tertiary/30 rounded-t h-6"></div>
+</div>
+<!-- Data Point 3: 4 -->
+<div class="flex flex-col items-center gap-0.5" title="Oct 26: 4">
+<span class="w-2 h-2 rounded-full bg-primary ring-2 ring-surface-container-lowest"></span>
+<div class="w-1 bg-primary/30 rounded-t h-4"></div>
+</div>
+<!-- Data Point 4: 4 -->
+<div class="flex flex-col items-center gap-0.5" title="Oct 28: 4">
+<span class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary-container"></span>
+<div class="w-1 bg-primary/50 rounded-t h-4"></div>
+</div>
+</div>
+<div class="w-32 flex justify-between text-[9px] font-data-sm text-secondary pt-1">
+<span>10/14 (7)</span>
+<span>10/28 (4)</span>
+</div>
+</div>
+</div>
+<!-- Quick + Add rating discrete chips -->
+<div class="pt-space-xs border-t border-outline-variant/30 flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between text-xs">
+<span class="font-label-md text-label-md text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-primary" data-icon="add_circle">add_circle</span>
+                Quick Log Level
+              </span>
+<span class="font-data-sm text-[11px] text-secondary">0 (Dormant) to 10 (Severe)</span>
+</div>
+<!-- Segmented Rating Slider / Chip Bar -->
+<div class="grid grid-cols-11 gap-1 pt-1">
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">0</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">1</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">2</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">3</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-primary-container text-on-primary-container ring-1 ring-primary font-bold shadow-sm" type="button">4</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">5</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">6</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">7</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">8</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" type="button">9</button>
+<button class="h-8 rounded text-xs font-data-sm flex items-center justify-center bg-error-container text-on-error-container hover:opacity-90 font-bold transition-colors" type="button">10</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Solutions & Rehab Tactics Section -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="healing">healing</span>
+            Solutions &amp; Rehab Tactics
+          </h2>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-md text-label-md py-0.5 px-1.5 rounded hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-xs" data-icon="add">add</span>
+            Add Solution
+          </button>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Solution Card 1 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-data-sm text-xs font-bold">1</span>
+<h3 class="font-title-md text-title-md text-on-surface">Reverse wrist curls with light dumbbell</h3>
+</div>
+<span class="font-data-sm text-data-sm bg-surface-container text-on-surface px-2 py-0.5 rounded border border-outline-variant/30">3x15</span>
+</div>
+<p class="font-body-md text-body-md text-secondary ml-8">
+              Focus on 3-second lowering tempo. Keep forearm seated firmly on bench.
+            </p>
+<div class="ml-8 mt-1">
+<a class="inline-flex items-center gap-1.5 px-space-xs py-1 rounded-lg bg-surface-container-low border border-outline-variant/40 text-on-surface-variant hover:text-primary transition-colors text-xs font-data-sm max-w-full truncate" href="https://youtube.com" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-sm text-error" data-icon="play_circle">play_circle</span>
+<span class="truncate">youtube.com/watch?v=... Extensor Tendon Rehab</span>
+<span class="material-symbols-outlined text-xs shrink-0" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</article>
+<!-- Solution Card 2 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-data-sm text-xs font-bold">2</span>
+<h3 class="font-title-md text-title-md text-on-surface">Eccentric wrist roller warmup</h3>
+</div>
+<span class="font-data-sm text-data-sm bg-surface-container text-on-surface px-2 py-0.5 rounded border border-outline-variant/30">Pre-Workout</span>
+</div>
+<p class="font-body-md text-body-md text-secondary ml-8">
+              Used strictly prior to pulling sessions to prime tendon compliance.
+            </p>
+</article>
+</div>
+</section>
+<!-- Comments & Chronological Thread -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="forum">forum</span>
+            Log Updates &amp; Notes
+          </h2>
+<span class="font-data-sm text-data-sm text-secondary">2 Updates</span>
+</div>
+<div class="relative pl-6 space-y-space-sm before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-outline-variant/40">
+<!-- Thread Item 1 (Oct 28) -->
+<div class="relative flex flex-col bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm">
+<div class="absolute -left-[27px] top-4 w-3.5 h-3.5 rounded-full bg-primary border-2 border-surface-container-lowest"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="font-data-sm text-data-sm text-primary font-bold">Oct 28 · 09:15 AM</span>
+<span class="font-data-sm text-[11px] bg-surface-container text-secondary px-1.5 py-0.5 rounded">Pain: 4</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">
+              Pain decreased after 2 days rest, tolerable during overhead press.
+            </p>
+</div>
+<!-- Thread Item 2 (Oct 20) -->
+<div class="relative flex flex-col bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-space-md shadow-sm">
+<div class="absolute -left-[27px] top-4 w-3.5 h-3.5 rounded-full bg-secondary-fixed-dim border-2 border-surface-container-lowest"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="font-data-sm text-data-sm text-secondary font-bold">Oct 20 · 06:40 PM</span>
+<span class="font-data-sm text-[11px] bg-surface-container text-secondary px-1.5 py-0.5 rounded">Pain: 6</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">
+              Started eccentric loading exercise twice daily.
+            </p>
+</div>
+</div>
+</section>
+<!-- History & Audit Section (Collapsible) -->
+<section class="pt-space-xs">
+<details class="group bg-surface-container-low border border-outline-variant/40 rounded-xl overflow-hidden shadow-none">
+<summary class="flex items-center justify-between px-space-md py-space-sm cursor-pointer list-none select-none hover:bg-surface-container transition-colors">
+<span class="font-label-md text-label-md font-semibold text-secondary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+              Audit History (3 Records)
+            </span>
+<span class="material-symbols-outlined text-secondary transition-transform group-open:rotate-180 text-sm" data-icon="expand_more">expand_more</span>
+</summary>
+<div class="px-space-md pb-space-sm pt-space-xs border-t border-outline-variant/30 flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-xs font-data-sm text-secondary">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                Rating updated to 4
+              </span>
+<span>Oct 28, 09:15</span>
+</div>
+<div class="flex items-center justify-between text-xs font-data-sm text-secondary">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                Solution added: Reverse wrist curls
+              </span>
+<span>Oct 16, 14:22</span>
+</div>
+<div class="flex items-center justify-between text-xs font-data-sm text-secondary">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                Created initial entry
+              </span>
+<span>Oct 14, 11:04</span>
+</div>
+</div>
+</details>
+</section>
+</div>
+<!-- Bottom Action Comment Input Bar (Floating Sticky Dock) -->
+<div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-surface/95 backdrop-blur-md border-t border-outline-variant/40 p-space-sm z-50">
+<form class="flex items-center gap-space-xs" onsubmit="event.preventDefault();">
+<div class="relative flex-1">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/70 rounded-xl px-space-sm py-2.5 text-body-md font-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-sm" placeholder="Add update note or observation..." type="text"/>
+</div>
+<button aria-label="Send Log Update" class="w-10 h-10 rounded-xl bg-primary-container hover:bg-primary text-on-primary flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="send">send</span>
+</button>
+</form>
+</div>
+</main>
+</body></html>

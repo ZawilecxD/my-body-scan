@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Physio Summary Generator</title>
+<!-- Google Fonts: Manrope, Inter, JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with forms & container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#bec6e0",
+            "on-secondary-fixed": "#131b2e",
+            "surface-tint": "#006a63",
+            "on-surface-variant": "#3e4947",
+            "on-primary": "#ffffff",
+            "surface-container": "#e5eeff",
+            "primary-fixed-dim": "#80d5cb",
+            "inverse-surface": "#213145",
+            "on-error-container": "#93000a",
+            "surface-dim": "#cbdbf5",
+            "tertiary-fixed-dim": "#ffb690",
+            "on-tertiary-fixed-variant": "#783200",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#00504a",
+            "surface-bright": "#f8f9ff",
+            "tertiary-container": "#af4c00",
+            "surface-container-low": "#eff4ff",
+            "on-secondary": "#ffffff",
+            "secondary": "#565e74",
+            "inverse-primary": "#80d5cb",
+            "tertiary": "#893a00",
+            "tertiary-fixed": "#ffdbca",
+            "primary": "#005c55",
+            "on-tertiary-container": "#ffe6da",
+            "surface-container-highest": "#d3e4fe",
+            "on-background": "#0b1c30",
+            "on-error": "#ffffff",
+            "primary-container": "#0f766e",
+            "outline": "#6e7977",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#d3e4fe",
+            "primary-fixed": "#9cf2e8",
+            "surface": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "background": "#f8f9ff",
+            "secondary-fixed": "#dae2fd",
+            "on-primary-container": "#a3faef",
+            "on-tertiary-fixed": "#341100",
+            "outline-variant": "#bdc9c6",
+            "secondary-container": "#dae2fd",
+            "on-secondary-container": "#5c647a",
+            "on-secondary-fixed-variant": "#3f465c",
+            "on-tertiary": "#ffffff",
+            "surface-container-high": "#dce9ff",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container-lowest": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-3xl": "3rem",
+            "margin-tablet": "2rem",
+            "space-lg": "1.25rem",
+            "space-2xs": "0.25rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.75rem",
+            "gutter-tablet": "1.5rem",
+            "space-xl": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.5rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Manrope"],
+            "title-md": ["Inter"],
+            "headline-lg": ["Manrope"],
+            "headline-md": ["Manrope"],
+            "data-lg": ["JetBrains Mono"],
+            "body-md": ["Inter"],
+            "data-sm": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "body-sm": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "data-lg": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "data-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex justify-center selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Android Mobile Screen Emulation Frame -->
+<div class="w-full max-w-md bg-background min-h-screen flex flex-col relative pb-28">
+<!-- Top App Bar: Anchored to Shared Component Spec (Linear task view with Back navigation) -->
+<header class="sticky top-0 z-40 bg-surface text-primary border-b border-outline-variant/30 flex justify-between items-center h-14 w-full px-space-md mx-auto">
+<div class="flex items-center gap-space-xs">
+<button aria-label="Go Back" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container active:opacity-80 transition-opacity duration-150">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">Physio Summary</h1>
+</div>
+<div class="flex items-center">
+<button aria-label="Summary Insights" class="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-surface-container active:opacity-80 transition-opacity duration-150">
+<span class="material-symbols-outlined text-[22px]">insights</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile py-space-md flex flex-col gap-space-lg">
+<!-- Contextual Introduction Card -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/40 shadow-sm flex items-start gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">assignment_turned_in</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Generate a clean, focused brief of your open and past injuries to share with your physical therapist or trainer.
+        </p>
+</section>
+<!-- Configuration Section 1: Time Window Segmented Control -->
+<section class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-semibold tracking-wide flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">date_range</span>
+          Time Window
+        </label>
+<!-- Segmented Chip Container -->
+<div class="h-11 bg-surface-container-high/60 p-1 rounded-lg grid grid-cols-4 items-center gap-1">
+<button class="h-full rounded-md text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-colors" type="button">
+            Last 1 mo
+          </button>
+<button class="h-full rounded-md bg-surface-container-lowest shadow-sm text-center font-label-md text-label-md text-on-surface font-semibold flex items-center justify-center" type="button">
+            Last 3 mos
+          </button>
+<button class="h-full rounded-md text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-colors" type="button">
+            Last 6 mos
+          </button>
+<button class="h-full rounded-md text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-colors" type="button">
+            All time
+          </button>
+</div>
+</section>
+<!-- Configuration Section 2: Status Scope Radio Pills -->
+<section class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-semibold tracking-wide flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">filter_alt</span>
+          Status Scope
+        </label>
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Active Pill -->
+<button class="flex items-center justify-center gap-2 py-2.5 px-space-sm rounded-lg bg-surface-container-lowest border-2 border-primary text-primary font-label-md text-label-md font-semibold shadow-sm" type="button">
+<span class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary/20"></span>
+            Open injuries only
+          </button>
+<!-- Inactive Pill -->
+<button class="flex items-center justify-center gap-2 py-2.5 px-space-sm rounded-lg bg-surface-container-low border border-outline-variant/60 text-secondary hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant"></span>
+            Open &amp; archived
+          </button>
+</div>
+</section>
+<!-- Configuration Section 3: Included Sections Checklist -->
+<section class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-semibold tracking-wide flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">tune</span>
+          Included Sections
+        </label>
+<div class="bg-surface-container-lowest rounded-xl p-space-sm border border-outline-variant/50 divide-y divide-outline-variant/30 shadow-sm">
+<!-- Item 1: Checked -->
+<label class="flex items-center justify-between py-2.5 cursor-pointer px-1">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">accessibility_new</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Description &amp; Landmarks</span>
+</div>
+<div class="w-5 h-5 rounded bg-primary text-on-primary flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</label>
+<!-- Item 2: Checked -->
+<label class="flex items-center justify-between py-2.5 cursor-pointer px-1">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">monitoring</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Severity trend &amp; latest score</span>
+</div>
+<div class="w-5 h-5 rounded bg-primary text-on-primary flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</label>
+<!-- Item 3: Checked -->
+<label class="flex items-center justify-between py-2.5 cursor-pointer px-1">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">healing</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Active solutions &amp; links</span>
+</div>
+<div class="w-5 h-5 rounded bg-primary text-on-primary flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</label>
+<!-- Item 4: Unchecked -->
+<label class="flex items-center justify-between py-2.5 cursor-pointer px-1 opacity-70">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-secondary">forum</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Full comment thread</span>
+</div>
+<div class="w-5 h-5 rounded border border-outline-variant/80 bg-surface-container-low flex items-center justify-center">
+</div>
+</label>
+</div>
+</section>
+<!-- Live Document Preview Box (Document Sheet Aesthetics) -->
+<section class="flex flex-col gap-space-xs mt-1">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold tracking-wide flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">visibility</span>
+            Live Document Preview
+          </label>
+<span class="font-data-sm text-data-sm text-secondary bg-surface-container px-2 py-0.5 rounded">2 Active Records</span>
+</div>
+<!-- Sheet Container with subtle paper tactility -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant/60 p-space-md shadow-sm relative overflow-hidden">
+<!-- Top edge aesthetic bar -->
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+<!-- Document Header -->
+<header class="pb-3 mb-3 border-b border-outline-variant/40 flex justify-between items-start">
+<div>
+<p class="font-data-sm text-data-sm font-semibold text-primary tracking-wider uppercase">MY BODY SCAN — PATIENT SUMMARY</p>
+<p class="font-data-sm text-data-sm text-secondary mt-0.5">Generated Nov 2, 2024 • 3-Month Window</p>
+</div>
+<span class="material-symbols-outlined text-[20px] text-outline-variant">draft</span>
+</header>
+<!-- Summary Items Stack -->
+<div class="space-y-3.5">
+<!-- Injury Item 1 -->
+<div class="p-space-sm bg-surface-container-low/50 rounded-lg border border-outline-variant/30 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<h2 class="font-title-md text-title-md text-on-surface">Forearm (Front)</h2>
+</div>
+<span class="font-data-sm text-data-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full font-semibold">
+                  Extensor strain
+                </span>
+</div>
+<div class="flex items-baseline gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-medium text-on-surface">Severity:</span>
+<span class="font-data-sm text-data-sm font-semibold text-tertiary-container">4/10</span>
+<span class="text-secondary text-[11px]">(down from 7/10)</span>
+<span class="material-symbols-outlined text-[14px] text-primary align-middle">trending_down</span>
+</div>
+<div class="flex items-baseline gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-medium text-on-surface">Solution:</span>
+<span class="text-on-surface-variant">Eccentric wrist curls</span>
+</div>
+</div>
+<!-- Injury Item 2 -->
+<div class="p-space-sm bg-surface-container-low/50 rounded-lg border border-outline-variant/30 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<h2 class="font-title-md text-title-md text-on-surface">Knee (Front)</h2>
+</div>
+<span class="font-data-sm text-data-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-semibold">
+                  Patellar tendinopathy
+                </span>
+</div>
+<div class="flex items-baseline gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-medium text-on-surface">Severity:</span>
+<span class="font-data-sm text-data-sm font-semibold text-primary">3/10</span>
+<span class="text-secondary text-[11px]">(stable)</span>
+</div>
+<div class="flex items-baseline gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-medium text-on-surface">Solution:</span>
+<span class="text-on-surface-variant">Spanish squats</span>
+</div>
+</div>
+</div>
+<!-- Document Watermark Sign-off -->
+<footer class="mt-3 pt-2.5 border-t border-dashed border-outline-variant/40 flex justify-between items-center text-secondary">
+<span class="font-data-sm text-data-sm text-[10px]">Verified Personal Somatic Log</span>
+<span class="font-data-sm text-data-sm text-[10px]">Page 1 of 1</span>
+</footer>
+</article>
+</section>
+</main>
+<!-- Bottom Action Bar (Fixed docking) -->
+<footer class="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md px-margin-mobile py-space-sm flex justify-center shadow-lg border-t border-outline-variant/20">
+<div class="w-full max-w-md grid grid-cols-2 gap-space-sm">
+<!-- Action 1: Share Text (Outlined Button) -->
+<button class="h-12 rounded-lg border border-primary text-primary hover:bg-surface-container active:scale-95 transition-all duration-150 font-label-md text-label-md font-semibold flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+          Share Text
+        </button>
+<!-- Action 2: Export PDF (Filled Primary Button with Share Icon) -->
+<button class="h-12 rounded-lg bg-primary-container text-on-primary hover:bg-primary active:scale-95 transition-all duration-150 font-label-md text-label-md font-semibold shadow-sm flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">share</span>
+          Export PDF
+        </button>
+</div>
+</footer>
+</div>
+</body></html>

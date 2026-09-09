@@ -1,0 +1,16 @@
+# My Body Scan — Product Specification & UI Design Handoff
+
+**Product:** My Body Scan (Android, Expo)  
+**Tone & Personality:** Practical, calm, personal logbook. Not clinical, not gamified, no "AI coach".  
+**Platform:** Mobile (Android portrait). Clean Material-3/Modern Native feel with custom tactile typography and calm sage/slate accents.
+**Architecture:** Single stack navigation. Local-only data.
+
+## Core Screens to Build:
+1. **Home Screen (Body Graphic Mode & Grouped List Mode)**: Top bar with quick actions (Summary, Backup, Archive, Log). Segmented control [Graphic | List] and [Front | Back]. Clean schematic anatomical silhouette with interactive region overlays and open injury badges.
+2. **Region Landmarks / Map Drilldown**: Region view (e.g., Arms · Front) with active injuries, landmark list, and "+" quick log.
+3. **Log Injury / Landmark Catalog**: Hierarchical picker by region and side.
+4. **Create Injury Form**: Landmark tag, required multiline description, primary Save.
+5. **Injury Detail Screen (Dense Thread)**: Description, status badge (Open/Archived), Quick action bar, Severity 0-10 sparkline/trend, Solutions list (with external links & add solution modal/inline), Chronological Comments, and Audit Log History.
+6. **Physio Summary Generator**: Filter window chips, scope selector, section toggles, preview, and Share Text/PDF actions.
+7. **Backup & Export/Restore**: Local data explainer, Export JSON action, Restore action with alert dialog.
+8. **Archive Screen**: List of healed/closed injuries with reopen flow.
