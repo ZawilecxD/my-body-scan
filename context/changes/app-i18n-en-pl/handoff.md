@@ -1,7 +1,8 @@
 # Handoff: app-i18n-en-pl
 
 Ticket: roadmap §9 — App i18n (EN / PL) (pasted; no Linear issue)  
-Status: mr_ready
+Status: mr_ready  
+MR: https://github.com/ZawilecxD/my-body-scan/pull/3
 
 ## What landed
 - Phase 1: Locale core, catalogs, settings persist — 1b45def
