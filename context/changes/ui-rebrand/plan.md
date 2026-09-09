@@ -319,8 +319,8 @@ Manual:
 
 #### Automated
 
-- [x] 2.1 Tab routes typecheck and lint
-- [x] 2.2 Header/FAB navigation compiles
+- [x] 2.1 Tab routes typecheck and lint — 8cc4f6d
+- [x] 2.2 Header/FAB navigation compiles — 8cc4f6d
 
 #### Manual
 
