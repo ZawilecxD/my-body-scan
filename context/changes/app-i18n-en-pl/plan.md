@@ -192,10 +192,10 @@ Manual:
 
 #### Automated
 
-- [ ] 1.1 Install expo-localization + i18n-js and configure app.json plugin
-- [ ] 1.2 Add message catalogs, resolveLocale, and i18n instance
-- [ ] 1.3 Schema v8 app_settings on all migrate paths + BACKUP_SCHEMA_VERSION=7 + settings repository
-- [ ] 1.4 LocaleProvider wired in root layout; tsc clean
+- [x] 1.1 Install expo-localization + i18n-js and configure app.json plugin — 1b45def
+- [x] 1.2 Add message catalogs, resolveLocale, and i18n instance — 1b45def
+- [x] 1.3 Schema v8 app_settings on all migrate paths + BACKUP_SCHEMA_VERSION=7 + settings repository — 1b45def
+- [x] 1.4 LocaleProvider wired in root layout; tsc clean — 1b45def
 
 #### Manual
 
@@ -207,8 +207,8 @@ Manual:
 
 #### Automated
 
-- [ ] 2.1 Localize landmark/region/zone helpers
-- [ ] 2.2 Localize summary text/HTML chrome; tsc clean
+- [x] 2.1 Localize landmark/region/zone helpers — 86cc780
+- [x] 2.2 Localize summary text/HTML chrome; tsc clean — 86cc780
 
 #### Manual
 
@@ -218,8 +218,8 @@ Manual:
 
 #### Automated
 
-- [ ] 3.1 Add /settings Language picker and home entry
-- [ ] 3.2 Replace screen chrome with t(); lint + tsc clean
+- [x] 3.1 Add /settings Language picker and home entry — b5c672b
+- [x] 3.2 Replace screen chrome with t(); lint + tsc clean — b5c672b
 
 #### Manual
 
