@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import {
   countEpisodesByIllnessIds,
@@ -80,7 +81,19 @@ export default function IllnessesScreen() {
           <ThemedText>{error}</ThemedText>
         ) : illnesses == null ? null : illnesses.length === 0 ? (
           <ThemedView style={styles.empty}>
-            <ThemedText>No illnesses logged yet.</ThemedText>
+            <ThemedText type="bodyLg">No illnesses logged yet.</ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                if (navigating.current) {
+                  return;
+                }
+                navigating.current = true;
+                router.push('/illnesses/new');
+              }}
+              style={({ pressed }) => pressed && styles.pressed}>
+              <ThemedText type="linkPrimary">Log illness</ThemedText>
+            </Pressable>
           </ThemedView>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
@@ -98,16 +111,21 @@ export default function IllnessesScreen() {
                     navigating.current = true;
                     router.push(`/illnesses/${illness.id}`);
                   }}
-                  style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-                  <ThemedView type="backgroundElement" style={styles.rowInner}>
-                    <ThemedText type="smallBold">{illness.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <Card style={styles.rowCard}>
+                    <ThemedText type="titleMd">{illness.name}</ThemedText>
+                    <ThemedText type="bodySm" themeColor="textSecondary">
                       {count === 1 ? '1 episode' : `${count} episodes`}
                       {latest != null
                         ? ` · latest ${new Date(latest).toLocaleString()}`
                         : ''}
                     </ThemedText>
-                  </ThemedView>
+                    {illness.notes != null && illness.notes.trim().length > 0 ? (
+                      <ThemedText type="bodySm" numberOfLines={2}>
+                        {illness.notes}
+                      </ThemedText>
+                    ) : null}
+                  </Card>
                 </Pressable>
               );
             })}
@@ -126,21 +144,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.four,
-    gap: Spacing.two,
+    padding: Spacing.spaceXl,
+    gap: Spacing.spaceSm,
   },
   list: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
+    paddingBottom: Spacing.spaceXl,
   },
-  row: {
-    borderRadius: Spacing.three,
-  },
-  rowInner: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+  rowCard: {
+    gap: Spacing.space2xs,
   },
   pressed: {
     opacity: 0.7,

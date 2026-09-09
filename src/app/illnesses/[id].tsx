@@ -1,17 +1,17 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppButton, Card, Chip, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { createEpisode, listEpisodesForIllness } from '@/db/episodes';
 import { getIllnessById } from '@/db/illnesses';
 import { createSymptomTactic, listSymptomTacticsForIllness } from '@/db/tactics';
 import { isHttpUrl } from '@/domain/http-url';
 import type { Illness, IllnessEpisode, SymptomTactic } from '@/domain/illness';
-import { useTheme } from '@/hooks/use-theme';
 
 export default function IllnessDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -19,7 +19,6 @@ export default function IllnessDetailScreen() {
   const id = idValue == null ? Number.NaN : Number(idValue);
 
   const db = useSQLiteContext();
-  const theme = useTheme();
   const [illness, setIllness] = useState<Illness | null | undefined>(undefined);
   const [episodes, setEpisodes] = useState<IllnessEpisode[]>([]);
   const [tactics, setTactics] = useState<SymptomTactic[]>([]);
@@ -129,105 +128,96 @@ export default function IllnessDetailScreen() {
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.scroll}>
-            <ThemedText type="smallBold">{illness.name}</ThemedText>
-            {illness.notes != null ? <ThemedText>{illness.notes}</ThemedText> : null}
-            <ThemedText type="small" themeColor="textSecondary">
+            <View style={styles.headerRow}>
+              <ThemedText type="headlineMd" style={styles.flex}>
+                {illness.name}
+              </ThemedText>
+              <Chip
+                label={episodes.length === 1 ? '1 episode' : `${episodes.length} episodes`}
+                selected={episodes.length > 0}
+              />
+            </View>
+            <ThemedText type="bodySm" themeColor="textSecondary">
               Logged {new Date(illness.createdAt).toLocaleString()}
             </ThemedText>
-            {error != null ? <ThemedText>{error}</ThemedText> : null}
+            {error != null ? <ThemedText themeColor="error">{error}</ThemedText> : null}
 
-            <ThemedText type="smallBold">
-              Episodes ({episodes.length})
-            </ThemedText>
-            {episodes.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                No episodes yet.
+            <Card style={styles.block}>
+              <ThemedText type="labelMd" themeColor="textSecondary">
+                Notes
               </ThemedText>
-            ) : (
-              episodes.map((episode) => (
-                <ThemedView key={episode.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText type="small">
-                    {new Date(episode.notedAt).toLocaleString()}
-                  </ThemedText>
-                </ThemedView>
-              ))
-            )}
-            <Pressable
-              accessibilityRole="button"
-              onPress={onLogEpisode}
-              style={({ pressed }) => [
-                styles.save,
-                { backgroundColor: theme.backgroundSelected },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold">Log episode</ThemedText>
-            </Pressable>
+              {illness.notes != null && illness.notes.trim().length > 0 ? (
+                <ThemedText type="bodyLg">{illness.notes}</ThemedText>
+              ) : (
+                <ThemedText type="bodySm" themeColor="textSecondary">
+                  No notes.
+                </ThemedText>
+              )}
+            </Card>
 
-            <ThemedText type="smallBold">Symptom tactics</ThemedText>
-            {tactics.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                No symptom tactics yet.
-              </ThemedText>
-            ) : (
-              tactics.map((tactic) => (
-                <ThemedView key={tactic.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText>{tactic.body}</ThemedText>
-                  {tactic.url != null && isHttpUrl(tactic.url) ? (
-                    <TacticLink url={tactic.url} onOpen={onOpenUrl} />
-                  ) : null}
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(tactic.createdAt).toLocaleString()}
-                  </ThemedText>
-                </ThemedView>
-              ))
-            )}
-            <ThemedText type="small" themeColor="textSecondary">
-              Add symptom tactic
-            </ThemedText>
-            <TextInput
-              accessibilityLabel="Symptom tactic"
-              multiline
-              textAlignVertical="top"
-              value={tacticBody}
-              onChangeText={setTacticBody}
-              style={[
-                styles.input,
-                styles.inputShort,
-                {
-                  color: theme.text,
-                  backgroundColor: theme.backgroundElement,
-                },
-              ]}
-            />
-            <ThemedText type="small" themeColor="textSecondary">
-              URL (optional)
-            </ThemedText>
-            <TextInput
-              accessibilityLabel="URL (optional)"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              value={tacticUrl}
-              onChangeText={setTacticUrl}
-              style={[
-                styles.input,
-                {
-                  color: theme.text,
-                  backgroundColor: theme.backgroundElement,
-                },
-              ]}
-            />
-            <Pressable
-              accessibilityRole="button"
-              disabled={trimmedTactic.length === 0}
-              onPress={onAddTactic}
-              style={({ pressed }) => [
-                styles.save,
-                { backgroundColor: theme.backgroundSelected },
-                (trimmedTactic.length === 0 || pressed) && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold">Add tactic</ThemedText>
-            </Pressable>
+            <View style={styles.block}>
+              <ThemedText type="titleMd">Episodes</ThemedText>
+              {episodes.length === 0 ? (
+                <ThemedText type="bodySm" themeColor="textSecondary">
+                  No episodes yet.
+                </ThemedText>
+              ) : (
+                episodes.map((episode) => (
+                  <Card key={episode.id} style={styles.itemCard}>
+                    <ThemedText type="bodyMd">
+                      {new Date(episode.notedAt).toLocaleString()}
+                    </ThemedText>
+                  </Card>
+                ))
+              )}
+              <AppButton label="Log episode" onPress={onLogEpisode} />
+            </View>
+
+            <View style={styles.block}>
+              <ThemedText type="titleMd">Symptom tactics</ThemedText>
+              {tactics.length === 0 ? (
+                <ThemedText type="bodySm" themeColor="textSecondary">
+                  No symptom tactics yet.
+                </ThemedText>
+              ) : (
+                tactics.map((tactic) => (
+                  <Card key={tactic.id} style={styles.itemCard}>
+                    <ThemedText type="bodyMd">{tactic.body}</ThemedText>
+                    {tactic.url != null && isHttpUrl(tactic.url) ? (
+                      <TacticLink url={tactic.url} onOpen={onOpenUrl} />
+                    ) : null}
+                    <ThemedText type="bodySm" themeColor="textSecondary">
+                      {new Date(tactic.createdAt).toLocaleString()}
+                    </ThemedText>
+                  </Card>
+                ))
+              )}
+              <Card style={styles.itemCard}>
+                <TextField
+                  label="Add symptom tactic"
+                  accessibilityLabel="Symptom tactic"
+                  multiline
+                  textAlignVertical="top"
+                  value={tacticBody}
+                  onChangeText={setTacticBody}
+                  style={styles.inputTall}
+                />
+                <TextField
+                  label="URL (optional)"
+                  accessibilityLabel="URL (optional)"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  value={tacticUrl}
+                  onChangeText={setTacticUrl}
+                />
+                <AppButton
+                  label="Add tactic"
+                  disabled={trimmedTactic.length === 0}
+                  onPress={onAddTactic}
+                />
+              </Card>
+            </View>
           </ScrollView>
         )}
       </ThemedView>
@@ -270,28 +260,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scroll: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
+    paddingBottom: Spacing.spaceXl,
   },
-  card: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  input: {
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    fontSize: 16,
-  },
-  inputShort: {
-    minHeight: 80,
-  },
-  save: {
+  headerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
+    gap: Spacing.spaceSm,
+  },
+  flex: {
+    flex: 1,
+  },
+  block: {
+    gap: Spacing.spaceXs,
+  },
+  itemCard: {
+    gap: Spacing.spaceXs,
+  },
+  inputTall: {
+    minHeight: 80,
   },
   pressed: {
     opacity: 0.7,

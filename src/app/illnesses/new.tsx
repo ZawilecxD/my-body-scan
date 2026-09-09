@@ -1,31 +1,32 @@
 import { Stack, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppButton, TextField } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { createIllness } from '@/db/illnesses';
-import { useTheme } from '@/hooks/use-theme';
 
 export default function NewIllnessScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
-  const theme = useTheme();
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const saving = useRef(false);
 
   const trimmedName = name.trim();
-  const canSave = trimmedName.length > 0;
+  const canSave = trimmedName.length > 0 && !isSaving;
 
   async function onSave() {
     if (!canSave || saving.current) {
       return;
     }
     saving.current = true;
+    setIsSaving(true);
     setError(null);
     try {
       const illness = await createIllness(db, { name, notes });
@@ -33,6 +34,7 @@ export default function NewIllnessScreen() {
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : 'Cannot save illness');
       saving.current = false;
+      setIsSaving(false);
     }
   }
 
@@ -40,51 +42,31 @@ export default function NewIllnessScreen() {
     <>
       <Stack.Screen options={{ title: 'Log illness' }} />
       <ThemedView style={styles.screen}>
-        <ThemedText type="small" themeColor="textSecondary">
-          Name
+        <ThemedText type="bodySm" themeColor="textSecondary">
+          Name is required. Notes are optional context for later episodes.
         </ThemedText>
-        <TextInput
+        <TextField
+          label="Name"
           accessibilityLabel="Name"
           value={name}
           onChangeText={setName}
-          style={[
-            styles.input,
-            {
-              color: theme.text,
-              backgroundColor: theme.backgroundElement,
-            },
-          ]}
+          autoFocus
         />
-        <ThemedText type="small" themeColor="textSecondary">
-          Notes (optional)
-        </ThemedText>
-        <TextInput
+        <TextField
+          label="Notes (optional)"
           accessibilityLabel="Notes (optional)"
           multiline
           textAlignVertical="top"
           value={notes}
           onChangeText={setNotes}
-          style={[
-            styles.input,
-            styles.notes,
-            {
-              color: theme.text,
-              backgroundColor: theme.backgroundElement,
-            },
-          ]}
+          style={styles.notes}
         />
-        {error != null ? <ThemedText>{error}</ThemedText> : null}
-        <Pressable
-          accessibilityRole="button"
+        {error != null ? <ThemedText themeColor="error">{error}</ThemedText> : null}
+        <AppButton
+          label={isSaving ? 'Saving' : 'Save'}
           disabled={!canSave}
           onPress={onSave}
-          style={({ pressed }) => [
-            styles.save,
-            { backgroundColor: theme.backgroundSelected },
-            (!canSave || pressed) && styles.pressed,
-          ]}>
-          <ThemedText type="smallBold">Save</ThemedText>
-        </Pressable>
+        />
       </ThemedView>
     </>
   );
@@ -93,24 +75,10 @@ export default function NewIllnessScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: Spacing.three,
-    gap: Spacing.two,
-  },
-  input: {
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    fontSize: 16,
+    padding: Spacing.spaceMd,
+    gap: Spacing.spaceSm,
   },
   notes: {
     minHeight: 120,
-  },
-  save: {
-    alignItems: 'center',
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  pressed: {
-    opacity: 0.7,
   },
 });
