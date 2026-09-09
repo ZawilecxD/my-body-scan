@@ -307,9 +307,9 @@ Manual:
 
 #### Automated
 
-- [x] 1.1 Font packages installed and typecheck/lint pass
-- [x] 1.2 Theme tokens and Themed* mapping compile
-- [x] 1.3 Shared primitives compile
+- [x] 1.1 Font packages installed and typecheck/lint pass — 6353c32
+- [x] 1.2 Theme tokens and Themed* mapping compile — 6353c32
+- [x] 1.3 Shared primitives compile — 6353c32
 
 #### Manual
 
