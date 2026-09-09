@@ -11,10 +11,13 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { dumpBackup, parseBackupJson, replaceFromBackup } from '@/db/backup';
 import { useTheme } from '@/hooks/use-theme';
+import type { TranslateFn } from '@/i18n';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function BackupScreen() {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const { t } = useLocale();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const exporting = useRef(false);
@@ -38,16 +41,16 @@ export default function BackupScreen() {
       await file.write(JSON.stringify(payload, null, 2));
 
       if (!(await Sharing.isAvailableAsync())) {
-        throw new Error('Sharing is not available on this device');
+        throw new Error(t('common.sharingUnavailable'));
       }
 
       await Sharing.shareAsync(file.uri, {
         mimeType: 'application/json',
-        dialogTitle: 'Export injury backup',
+        dialogTitle: t('backup.exportDialog'),
       });
-      setMessage(`Exported ${payload.injuries.length} injuries.`);
+      setMessage(t('backup.exported', { count: payload.injuries.length }));
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot export backup');
+      setError(caught instanceof Error ? caught.message : t('backup.exportError'));
     } finally {
       exporting.current = false;
     }
@@ -76,15 +79,15 @@ export default function BackupScreen() {
       const text = await new File(asset.uri).text();
       const payload = parseBackupJson(text);
 
-      const confirmed = await confirmReplace(payload.injuries.length);
+      const confirmed = await confirmReplace(payload.injuries.length, t);
       if (!confirmed) {
         return;
       }
 
       await replaceFromBackup(db, payload);
-      setMessage(`Restored ${payload.injuries.length} injuries.`);
+      setMessage(t('backup.restored', { count: payload.injuries.length }));
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot restore backup');
+      setError(caught instanceof Error ? caught.message : t('backup.restoreError'));
     } finally {
       restoring.current = false;
     }
@@ -92,13 +95,8 @@ export default function BackupScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Backup' }} />
+      <Stack.Screen options={{ title: t('backup.title') }} />
       <ThemedView style={styles.screen}>
-        <ThemedText themeColor="textSecondary">
-          Export all injury data to a JSON file, or restore from a previous export. Restore replaces all
-          local injury data.
-        </ThemedText>
-
         <Pressable
           accessibilityRole="button"
           onPress={onExport}
@@ -107,7 +105,7 @@ export default function BackupScreen() {
             { backgroundColor: theme.backgroundSelected },
             pressed && styles.pressed,
           ]}>
-          <ThemedText type="smallBold">Export</ThemedText>
+          <ThemedText type="smallBold">{t('backup.export')}</ThemedText>
         </Pressable>
 
         <Pressable
@@ -118,7 +116,7 @@ export default function BackupScreen() {
             { backgroundColor: theme.backgroundSelected },
             pressed && styles.pressed,
           ]}>
-          <ThemedText type="smallBold">Restore</ThemedText>
+          <ThemedText type="smallBold">{t('backup.restore')}</ThemedText>
         </Pressable>
 
         {message != null ? <ThemedText>{message}</ThemedText> : null}
@@ -128,14 +126,14 @@ export default function BackupScreen() {
   );
 }
 
-function confirmReplace(injuryCount: number): Promise<boolean> {
+function confirmReplace(injuryCount: number, t: TranslateFn): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(
-      'Replace all local data?',
-      `Restoring will delete current injuries and replace them with this backup (${injuryCount} injuries). This cannot be undone.`,
+      t('backup.replaceTitle'),
+      t('backup.replaceBody', { count: injuryCount }),
       [
-        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-        { text: 'Replace', style: 'destructive', onPress: () => resolve(true) },
+        { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('backup.replace'), style: 'destructive', onPress: () => resolve(true) },
       ],
       { cancelable: true, onDismiss: () => resolve(false) },
     );

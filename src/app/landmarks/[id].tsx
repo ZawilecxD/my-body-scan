@@ -9,6 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { listOpenInjuriesForLandmark } from '@/db/injuries';
 import type { Injury } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById, parseLimb } from '@/domain/landmarks';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function LandmarkInjuriesScreen() {
   const { id: idParam, limb: limbParam } = useLocalSearchParams<{
@@ -21,6 +22,7 @@ export default function LandmarkInjuriesScreen() {
 
   const db = useSQLiteContext();
   const router = useRouter();
+  const { t } = useLocale();
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,31 +42,28 @@ export default function LandmarkInjuriesScreen() {
         })
         .catch((caught: unknown) => {
           if (!cancelled) {
-            setError(caught instanceof Error ? caught.message : 'Cannot load injuries');
+            setError(caught instanceof Error ? caught.message : t('landmarks.loadError'));
           }
         });
 
       return () => {
         cancelled = true;
       };
-    }, [db, landmark, landmarkId, limb]),
+    }, [db, landmark, landmarkId, limb, t]),
   );
 
   if (landmarkId == null || landmark == null) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Landmark' }} />
+        <Stack.Screen options={{ title: t('landmarks.detailTitle') }} />
         <ThemedView style={styles.screen}>
-          <ThemedText>
-            Cannot open landmark: id is missing or unknown
-            {landmarkId == null ? '' : ` (${landmarkId})`}.
-          </ThemedText>
+          <ThemedText>{t('landmarks.unknownBody')}</ThemedText>
         </ThemedView>
       </>
     );
   }
 
-  const title = formatLandmarkLabel(landmark, limb);
+  const title = formatLandmarkLabel(landmark, t, limb);
 
   return (
     <>
@@ -82,7 +81,7 @@ export default function LandmarkInjuriesScreen() {
                 })
               }
               style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedText type="linkPrimary">Log another</ThemedText>
+              <ThemedText type="linkPrimary">{t('landmarks.logAnother')}</ThemedText>
             </Pressable>
           ),
         }}
@@ -90,7 +89,9 @@ export default function LandmarkInjuriesScreen() {
       <ThemedView style={styles.screen}>
         {error != null ? (
           <ThemedText>{error}</ThemedText>
-        ) : injuries == null ? null : (
+        ) : injuries == null ? null : injuries.length === 0 ? (
+          <ThemedText>{t('landmarks.emptyOpen')}</ThemedText>
+        ) : (
           <ScrollView contentContainerStyle={styles.list}>
             {injuries.map((injury) => (
               <Link key={injury.id} href={`/injuries/${injury.id}`} asChild>

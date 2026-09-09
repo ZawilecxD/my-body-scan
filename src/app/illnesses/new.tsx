@@ -8,11 +8,13 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { createIllness } from '@/db/illnesses';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function NewIllnessScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useLocale();
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,20 +33,20 @@ export default function NewIllnessScreen() {
       const illness = await createIllness(db, { name, notes });
       router.replace(`/illnesses/${illness.id}`);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot save illness');
+      setError(caught instanceof Error ? caught.message : t('illnesses.saveError'));
       saving.current = false;
     }
   }
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Log illness' }} />
+      <Stack.Screen options={{ title: t('illnesses.log') }} />
       <ThemedView style={styles.screen}>
         <ThemedText type="small" themeColor="textSecondary">
-          Name
+          {t('illnesses.name')}
         </ThemedText>
         <TextInput
-          accessibilityLabel="Name"
+          accessibilityLabel={t('illnesses.name')}
           value={name}
           onChangeText={setName}
           style={[
@@ -56,10 +58,10 @@ export default function NewIllnessScreen() {
           ]}
         />
         <ThemedText type="small" themeColor="textSecondary">
-          Notes (optional)
+          {t('illnesses.notesOptional')}
         </ThemedText>
         <TextInput
-          accessibilityLabel="Notes (optional)"
+          accessibilityLabel={t('illnesses.notesOptional')}
           multiline
           textAlignVertical="top"
           value={notes}
@@ -83,7 +85,7 @@ export default function NewIllnessScreen() {
             { backgroundColor: theme.backgroundSelected },
             (!canSave || pressed) && styles.pressed,
           ]}>
-          <ThemedText type="smallBold">Save</ThemedText>
+          <ThemedText type="smallBold">{t('common.save')}</ThemedText>
         </Pressable>
       </ThemedView>
     </>

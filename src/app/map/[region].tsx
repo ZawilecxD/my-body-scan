@@ -12,16 +12,20 @@ import type { Injury } from '@/domain/injury';
 import {
   formatLandmarkLabel,
   getLandmarkById,
+  landmarkName,
   landmarksForArea,
   overviewZoneLabel,
   parseLimb,
   REGION_ORDER,
+  regionLabel,
   type Landmark,
   type OverviewZoneId,
   type Region,
   type Side,
 } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
+import type { TranslateFn } from '@/i18n';
+import { useLocale } from '@/i18n/locale-context';
 
 function parseRegion(value: string | undefined): Region | null {
   if (value == null) {
@@ -37,12 +41,17 @@ function parseSide(value: string | undefined): Side | null {
   return null;
 }
 
-function areaTitle(region: Region, side: Side, limb: ReturnType<typeof parseLimb>): string {
+function areaTitle(
+  region: Region,
+  side: Side,
+  limb: ReturnType<typeof parseLimb>,
+  t: TranslateFn,
+): string {
   if (limb != null && (region === 'arms' || region === 'legs')) {
     const zone: OverviewZoneId = region === 'arms' ? `${limb}-arm` : `${limb}-leg`;
-    return `${overviewZoneLabel(zone)} · ${side}`;
+    return `${overviewZoneLabel(zone, t)} · ${t(`side.${side}`)}`;
   }
-  return `${region.charAt(0).toUpperCase() + region.slice(1)} · ${side}`;
+  return `${regionLabel(region, t)} · ${t(`side.${side}`)}`;
 }
 
 export default function MapRegionScreen() {
@@ -61,6 +70,7 @@ export default function MapRegionScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useLocale();
   const [injuries, setInjuries] = useState<Injury[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigating = useRef(false);
@@ -82,26 +92,22 @@ export default function MapRegionScreen() {
         })
         .catch((caught: unknown) => {
           if (!cancelled) {
-            setError(caught instanceof Error ? caught.message : 'Cannot load open injuries');
+            setError(caught instanceof Error ? caught.message : t('map.loadError'));
           }
         });
 
       return () => {
         cancelled = true;
       };
-    }, [db, region, side]),
+    }, [db, region, side, t]),
   );
 
   if (region == null || side == null) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Area' }} />
+        <Stack.Screen options={{ title: t('map.areaTitle') }} />
         <ThemedView style={styles.screen}>
-          <ThemedText style={styles.message}>
-            Cannot open area: region or side is missing or unknown
-            {regionValue == null ? '' : ` (region=${regionValue})`}
-            {sideValue == null ? '' : ` (side=${sideValue})`}.
-          </ThemedText>
+          <ThemedText style={styles.message}>{t('map.invalidArea')}</ThemedText>
         </ThemedView>
       </>
     );
@@ -123,7 +129,7 @@ export default function MapRegionScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: areaTitle(region, side, limb) }} />
+      <Stack.Screen options={{ title: areaTitle(region, side, limb, t) }} />
       <ThemedView style={styles.screen}>
         <ThemedView style={styles.segments}>
           <Pressable
@@ -135,7 +141,7 @@ export default function MapRegionScreen() {
               side === 'front' && { backgroundColor: theme.backgroundSelected },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold">Front</ThemedText>
+            <ThemedText type="smallBold">{t('map.front')}</ThemedText>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -146,7 +152,7 @@ export default function MapRegionScreen() {
               side === 'back' && { backgroundColor: theme.backgroundSelected },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold">Back</ThemedText>
+            <ThemedText type="smallBold">{t('map.back')}</ThemedText>
           </Pressable>
         </ThemedView>
         {error != null ? (
@@ -157,7 +163,9 @@ export default function MapRegionScreen() {
               <ThemedView key={section.landmark.id} style={styles.section}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Log injury on ${section.landmark.name}`}
+                  accessibilityLabel={t('map.logOnLandmark', {
+                    name: landmarkName(section.landmark, t),
+                  })}
                   onPress={() => onLog(section.landmark.id)}
                   style={({ pressed }) => [
                     styles.sectionHeader,
@@ -165,7 +173,7 @@ export default function MapRegionScreen() {
                     pressed && styles.pressed,
                   ]}>
                   <ThemedText type="smallBold" style={styles.sectionTitle}>
-                    {section.landmark.name}
+                    {landmarkName(section.landmark, t)}
                   </ThemedText>
                   <SymbolView
                     name={{ ios: 'plus', android: 'add' }}
@@ -183,7 +191,7 @@ export default function MapRegionScreen() {
                   const title =
                     landmark == null
                       ? injury.landmarkId
-                      : formatLandmarkLabel(landmark, injury.limb);
+                      : formatLandmarkLabel(landmark, t, injury.limb);
 
                   return (
                     <ThemedView key={injury.id} style={styles.row}>

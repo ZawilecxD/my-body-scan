@@ -12,10 +12,13 @@ import {
 } from '@/db/episodes';
 import { listIllnesses } from '@/db/illnesses';
 import type { Illness } from '@/domain/illness';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function IllnessesScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const { t, resolvedLocale } = useLocale();
+  const dateLocale = resolvedLocale === 'pl' ? 'pl-PL' : 'en-US';
   const [illnesses, setIllnesses] = useState<Illness[] | null>(null);
   const [episodeCounts, setEpisodeCounts] = useState<Record<number, number>>({});
   const [latestNotedAt, setLatestNotedAt] = useState<Record<number, string>>({});
@@ -43,21 +46,21 @@ export default function IllnessesScreen() {
         })
         .catch((caught: unknown) => {
           if (!cancelled) {
-            setError(caught instanceof Error ? caught.message : 'Cannot load illnesses');
+            setError(caught instanceof Error ? caught.message : t('illnesses.loadError'));
           }
         });
 
       return () => {
         cancelled = true;
       };
-    }, [db]),
+    }, [db, t]),
   );
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Illnesses',
+          title: t('illnesses.title'),
           headerRight: () => (
             <Pressable
               accessibilityRole="button"
@@ -70,7 +73,7 @@ export default function IllnessesScreen() {
                 router.push('/illnesses/new');
               }}
               style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedText type="linkPrimary">Log illness</ThemedText>
+              <ThemedText type="linkPrimary">{t('illnesses.log')}</ThemedText>
             </Pressable>
           ),
         }}
@@ -80,7 +83,7 @@ export default function IllnessesScreen() {
           <ThemedText>{error}</ThemedText>
         ) : illnesses == null ? null : illnesses.length === 0 ? (
           <ThemedView style={styles.empty}>
-            <ThemedText>No illnesses logged yet.</ThemedText>
+            <ThemedText>{t('illnesses.empty')}</ThemedText>
           </ThemedView>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
@@ -102,9 +105,9 @@ export default function IllnessesScreen() {
                   <ThemedView type="backgroundElement" style={styles.rowInner}>
                     <ThemedText type="smallBold">{illness.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {count === 1 ? '1 episode' : `${count} episodes`}
+                      {t('illnesses.episodeCount', { count })}
                       {latest != null
-                        ? ` · latest ${new Date(latest).toLocaleString()}`
+                        ? ` · ${new Date(latest).toLocaleString(dateLocale)}`
                         : ''}
                     </ThemedText>
                   </ThemedView>

@@ -9,6 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { createInjury } from '@/db/injuries';
 import { formatLandmarkLabel, getLandmarkById, parseLimb } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/i18n/locale-context';
 
 export default function NewInjuryScreen() {
   const { landmarkId: landmarkIdParam, limb: limbParam } = useLocalSearchParams<{
@@ -22,6 +23,7 @@ export default function NewInjuryScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useLocale();
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,12 +34,9 @@ export default function NewInjuryScreen() {
   if (landmarkId == null || landmark == null) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Log injury' }} />
+        <Stack.Screen options={{ title: t('injury.newTitle') }} />
         <ThemedView style={styles.screen}>
-          <ThemedText>
-            Cannot log injury: landmark is missing or unknown
-            {landmarkId == null ? '' : ` (${landmarkId})`}.
-          </ThemedText>
+          <ThemedText>{t('landmarks.unknownBody')}</ThemedText>
         </ThemedView>
       </>
     );
@@ -54,23 +53,21 @@ export default function NewInjuryScreen() {
       const injury = await createInjury(db, { landmarkId, description, limb });
       router.replace(`/injuries/${injury.id}`);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot save injury');
+      setError(caught instanceof Error ? caught.message : t('injury.saveError'));
       setIsSaving(false);
     }
   }
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Log injury' }} />
+      <Stack.Screen options={{ title: t('injury.newTitle') }} />
       <ThemedView style={styles.screen}>
-        <ThemedText type="smallBold">
-          {formatLandmarkLabel(landmark, limb)}
-        </ThemedText>
+        <ThemedText type="smallBold">{formatLandmarkLabel(landmark, t, limb)}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Description
+          {t('injury.description')}
         </ThemedText>
         <TextInput
-          accessibilityLabel="Description"
+          accessibilityLabel={t('injury.description')}
           multiline
           textAlignVertical="top"
           value={description}
@@ -93,7 +90,9 @@ export default function NewInjuryScreen() {
             { backgroundColor: theme.backgroundSelected },
             (!canSave || pressed) && styles.pressed,
           ]}>
-          <ThemedText type="smallBold">{isSaving ? 'Saving' : 'Save'}</ThemedText>
+          <ThemedText type="smallBold">
+            {isSaving ? t('common.saving') : t('common.save')}
+          </ThemedText>
         </Pressable>
       </ThemedView>
     </>
