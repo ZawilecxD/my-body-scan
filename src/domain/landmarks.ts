@@ -1,3 +1,6 @@
+import type { TranslateFn } from '@/i18n';
+import type { MessageKey } from '@/i18n/messages/en';
+
 export type Region = 'head' | 'torso' | 'arms' | 'legs';
 export type Side = 'front' | 'back';
 /** The person's left/right, not the viewer's. */
@@ -98,25 +101,30 @@ export function overviewZoneLimb(zone: OverviewZoneId): Limb | null {
   return null;
 }
 
-export function overviewZoneLabel(zone: OverviewZoneId): string {
-  switch (zone) {
-    case 'head':
-      return 'Head';
-    case 'torso':
-      return 'Torso';
-    case 'left-arm':
-      return 'Left arm';
-    case 'right-arm':
-      return 'Right arm';
-    case 'left-leg':
-      return 'Left leg';
-    case 'right-leg':
-      return 'Right leg';
-  }
+export function regionLabel(region: Region, t: TranslateFn): string {
+  return t(`region.${region}` as MessageKey);
 }
 
-export function formatLandmarkLabel(landmark: Landmark, limb?: Limb | null): string {
-  return limb == null ? `${landmark.name} · ${landmark.side}` : `${landmark.name} · ${limb} · ${landmark.side}`;
+export function overviewZoneLabel(zone: OverviewZoneId, t: TranslateFn): string {
+  return t(`zone.${zone}` as MessageKey);
+}
+
+export function landmarkName(landmark: Landmark, t: TranslateFn): string {
+  return t(`landmark.${landmark.id}` as MessageKey);
+}
+
+export function formatLandmarkLabel(
+  landmark: Landmark,
+  t: TranslateFn,
+  limb?: Limb | null,
+): string {
+  const name = landmarkName(landmark, t);
+  const side = t(`side.${landmark.side}` as MessageKey);
+  if (limb == null) {
+    return `${name} · ${side}`;
+  }
+  const limbLabel = t(`limb.${limb}` as MessageKey);
+  return `${name} · ${limbLabel} · ${side}`;
 }
 
 export function injuryMatchesOverviewZone(

@@ -3,8 +3,11 @@ import {
   formatLandmarkLabel,
   getLandmarkById,
   REGION_ORDER,
+  regionLabel,
   type Region,
 } from '@/domain/landmarks';
+import type { AppLocale, TranslateFn } from '@/i18n';
+import type { MessageKey } from '@/i18n/messages/en';
 
 export type SummaryWindowPreset = '1m' | '3m' | '6m' | '12m' | 'all';
 
@@ -92,49 +95,29 @@ export function commentInWindow(comment: Comment, window: SummaryWindow): boolea
   return comment.createdAt >= window.start;
 }
 
-export function windowPresetLabel(preset: SummaryWindowPreset): string {
-  switch (preset) {
-    case '1m':
-      return 'Last 1 month';
-    case '3m':
-      return 'Last 3 months';
-    case '6m':
-      return 'Last 6 months';
-    case '12m':
-      return 'Last 12 months';
-    case 'all':
-      return 'All time';
-  }
+export function windowPresetLabel(preset: SummaryWindowPreset, t: TranslateFn): string {
+  return t(`summary.window.${preset}` as MessageKey);
 }
 
-export function statusScopeLabel(includeArchived: boolean): string {
-  return includeArchived ? 'Open and archived' : 'Open only';
+export function statusScopeLabel(includeArchived: boolean, t: TranslateFn): string {
+  return includeArchived ? t('summary.scope.openAndArchived') : t('summary.scope.openOnly');
 }
 
-export function regionLabel(region: Region): string {
-  switch (region) {
-    case 'head':
-      return 'Head';
-    case 'torso':
-      return 'Torso';
-    case 'arms':
-      return 'Arms';
-    case 'legs':
-      return 'Legs';
-  }
-}
-
-export function formatSummaryText(doc: SummaryDocument): string {
+export function formatSummaryText(
+  doc: SummaryDocument,
+  t: TranslateFn,
+  locale: AppLocale,
+): string {
   const lines: string[] = [
-    'Physio summary',
-    `Generated: ${formatTimestamp(doc.generatedAt)}`,
-    `Window: ${windowPresetLabel(doc.windowPreset)}`,
-    `Status: ${statusScopeLabel(doc.includeArchived)}`,
+    t('summary.chrome.title'),
+    t('summary.chrome.generated', { when: formatTimestamp(doc.generatedAt, locale) }),
+    t('summary.chrome.window', { window: windowPresetLabel(doc.windowPreset, t) }),
+    t('summary.chrome.status', { status: statusScopeLabel(doc.includeArchived, t) }),
     '',
   ];
 
   if (doc.injuries.length === 0) {
-    lines.push('No injuries in this window.');
+    lines.push(t('summary.chrome.empty'));
     return lines.join('\n');
   }
 
@@ -143,9 +126,9 @@ export function formatSummaryText(doc: SummaryDocument): string {
     if (sections.length === 0) {
       continue;
     }
-    lines.push(regionLabel(region));
+    lines.push(regionLabel(region, t));
     for (const section of sections) {
-      lines.push(...formatInjuryTextLines(section));
+      lines.push(...formatInjuryTextLines(section, t, locale));
       lines.push('');
     }
   }
@@ -153,7 +136,11 @@ export function formatSummaryText(doc: SummaryDocument): string {
   return lines.join('\n').trimEnd() + '\n';
 }
 
-export function formatSummaryHtml(doc: SummaryDocument): string {
+export function formatSummaryHtml(
+  doc: SummaryDocument,
+  t: TranslateFn,
+  locale: AppLocale,
+): string {
   const parts: string[] = [
     '<!DOCTYPE html>',
     '<html><head><meta charset="utf-8" />',
@@ -167,14 +154,14 @@ export function formatSummaryHtml(doc: SummaryDocument): string {
     '.block{margin:0 0 12px;}',
     'ul{margin:4px 0 8px 18px;padding:0;}',
     '</style></head><body>',
-    '<h1>Physio summary</h1>',
-    `<p class="meta">Generated: ${escapeHtml(formatTimestamp(doc.generatedAt))}</p>`,
-    `<p class="meta">Window: ${escapeHtml(windowPresetLabel(doc.windowPreset))}</p>`,
-    `<p class="meta">Status: ${escapeHtml(statusScopeLabel(doc.includeArchived))}</p>`,
+    `<h1>${escapeHtml(t('summary.chrome.title'))}</h1>`,
+    `<p class="meta">${escapeHtml(t('summary.chrome.generated', { when: formatTimestamp(doc.generatedAt, locale) }))}</p>`,
+    `<p class="meta">${escapeHtml(t('summary.chrome.window', { window: windowPresetLabel(doc.windowPreset, t) }))}</p>`,
+    `<p class="meta">${escapeHtml(t('summary.chrome.status', { status: statusScopeLabel(doc.includeArchived, t) }))}</p>`,
   ];
 
   if (doc.injuries.length === 0) {
-    parts.push('<p>No injuries in this window.</p>');
+    parts.push(`<p>${escapeHtml(t('summary.chrome.empty'))}</p>`);
     parts.push('</body></html>');
     return parts.join('');
   }
@@ -184,9 +171,9 @@ export function formatSummaryHtml(doc: SummaryDocument): string {
     if (sections.length === 0) {
       continue;
     }
-    parts.push(`<h2>${escapeHtml(regionLabel(region))}</h2>`);
+    parts.push(`<h2>${escapeHtml(regionLabel(region, t))}</h2>`);
     for (const section of sections) {
-      parts.push(...formatInjuryHtmlBlocks(section));
+      parts.push(...formatInjuryHtmlBlocks(section, t, locale));
     }
   }
 
@@ -194,12 +181,12 @@ export function formatSummaryHtml(doc: SummaryDocument): string {
   return parts.join('');
 }
 
-export function landmarkLabelForInjury(injury: Injury): string {
+export function landmarkLabelForInjury(injury: Injury, t: TranslateFn): string {
   const landmark = getLandmarkById(injury.landmarkId);
   if (landmark == null) {
     return injury.landmarkId;
   }
-  return formatLandmarkLabel(landmark, injury.limb);
+  return formatLandmarkLabel(landmark, t, injury.limb);
 }
 
 export function regionForInjury(injury: Injury): Region {
@@ -235,20 +222,28 @@ export function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;');
 }
 
-function formatInjuryTextLines(section: SummaryInjurySection): string[] {
-  const status = section.injury.status === 'open' ? 'Open' : 'Archived';
+function formatInjuryTextLines(
+  section: SummaryInjurySection,
+  t: TranslateFn,
+  locale: AppLocale,
+): string[] {
+  const status =
+    section.injury.status === 'open' ? t('summary.chrome.open') : t('summary.chrome.archived');
   const lines = [`${section.landmarkLabel} (${status})`];
 
   if (section.description != null) {
-    lines.push(`Description: ${section.description}`);
+    lines.push(`${t('summary.chrome.description')}: ${section.description}`);
   }
   if (section.latestSeverity != null) {
     lines.push(
-      `Severity: ${section.latestSeverity.value} / 10 (${formatTimestamp(section.latestSeverity.createdAt)})`,
+      t('summary.chrome.severityLine', {
+        value: section.latestSeverity.value,
+        when: formatTimestamp(section.latestSeverity.createdAt, locale),
+      }),
     );
   }
   if (section.solutions.length > 0) {
-    lines.push('Solutions:');
+    lines.push(`${t('summary.chrome.solutions')}:`);
     for (const solution of section.solutions) {
       lines.push(
         solution.url == null ? `  - ${solution.body}` : `  - ${solution.body} (${solution.url})`,
@@ -256,30 +251,37 @@ function formatInjuryTextLines(section: SummaryInjurySection): string[] {
     }
   }
   if (section.comments.length > 0) {
-    lines.push('Comments:');
+    lines.push(`${t('summary.chrome.comments')}:`);
     for (const comment of section.comments) {
-      lines.push(`  - ${formatTimestamp(comment.createdAt)}: ${comment.body}`);
+      lines.push(`  - ${formatTimestamp(comment.createdAt, locale)}: ${comment.body}`);
     }
   }
   return lines;
 }
 
-function formatInjuryHtmlBlocks(section: SummaryInjurySection): string[] {
-  const status = section.injury.status === 'open' ? 'Open' : 'Archived';
+function formatInjuryHtmlBlocks(
+  section: SummaryInjurySection,
+  t: TranslateFn,
+  locale: AppLocale,
+): string[] {
+  const status =
+    section.injury.status === 'open' ? t('summary.chrome.open') : t('summary.chrome.archived');
   const blocks = [
-    `<div class="block"><h3>${escapeHtml(section.landmarkLabel)} (${status})</h3>`,
+    `<div class="block"><h3>${escapeHtml(section.landmarkLabel)} (${escapeHtml(status)})</h3>`,
   ];
 
   if (section.description != null) {
-    blocks.push(`<p><strong>Description:</strong> ${escapeHtml(section.description)}</p>`);
+    blocks.push(
+      `<p><strong>${escapeHtml(t('summary.chrome.description'))}:</strong> ${escapeHtml(section.description)}</p>`,
+    );
   }
   if (section.latestSeverity != null) {
     blocks.push(
-      `<p><strong>Severity:</strong> ${section.latestSeverity.value} / 10 (${escapeHtml(formatTimestamp(section.latestSeverity.createdAt))})</p>`,
+      `<p><strong>${escapeHtml(t('summary.chrome.severity'))}:</strong> ${section.latestSeverity.value} / 10 (${escapeHtml(formatTimestamp(section.latestSeverity.createdAt, locale))})</p>`,
     );
   }
   if (section.solutions.length > 0) {
-    blocks.push('<p><strong>Solutions:</strong></p><ul>');
+    blocks.push(`<p><strong>${escapeHtml(t('summary.chrome.solutions'))}:</strong></p><ul>`);
     for (const solution of section.solutions) {
       const body = escapeHtml(solution.body);
       if (solution.url == null) {
@@ -291,10 +293,10 @@ function formatInjuryHtmlBlocks(section: SummaryInjurySection): string[] {
     blocks.push('</ul>');
   }
   if (section.comments.length > 0) {
-    blocks.push('<p><strong>Comments:</strong></p><ul>');
+    blocks.push(`<p><strong>${escapeHtml(t('summary.chrome.comments'))}:</strong></p><ul>`);
     for (const comment of section.comments) {
       blocks.push(
-        `<li>${escapeHtml(formatTimestamp(comment.createdAt))}: ${escapeHtml(comment.body)}</li>`,
+        `<li>${escapeHtml(formatTimestamp(comment.createdAt, locale))}: ${escapeHtml(comment.body)}</li>`,
       );
     }
     blocks.push('</ul>');
@@ -303,10 +305,10 @@ function formatInjuryHtmlBlocks(section: SummaryInjurySection): string[] {
   return blocks;
 }
 
-function formatTimestamp(iso: string): string {
+function formatTimestamp(iso: string, locale: AppLocale): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
-  return date.toLocaleString();
+  return date.toLocaleString(locale === 'pl' ? 'pl-PL' : 'en-US');
 }
