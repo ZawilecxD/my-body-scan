@@ -90,6 +90,9 @@ export default function RootLayout() {
                 fontSize: 20,
                 fontWeight: '600',
               },
+              headerRightContainerStyle: {
+                paddingRight: Spacing.spaceSm,
+              },
               contentStyle: { backgroundColor: palette.background },
             }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

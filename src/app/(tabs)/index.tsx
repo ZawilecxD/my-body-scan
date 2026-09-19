@@ -7,8 +7,8 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BodyOverviewMap } from '@/components/body-overview-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Card, Chip, IconButton, SegmentedControl } from '@/components/ui';
-import { Radii, Spacing } from '@/constants/theme';
+import { AppButton, Card, IconButton } from '@/components/ui';
+import { Spacing } from '@/constants/theme';
 import { listOpenInjuries } from '@/db/injuries';
 import { listLatestSolutionsByInjuryIds } from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
@@ -115,7 +115,6 @@ export default function OpenInjuriesScreen() {
 
   const groups = injuries == null ? [] : groupInjuriesByRegion(injuries);
   const openCounts = countOpenByZone(injuries ?? [], side);
-  const openCount = injuries?.length ?? 0;
 
   const openLogInjury = () => {
     if (navigating.current) {
@@ -142,36 +141,60 @@ export default function OpenInjuriesScreen() {
         }}
       />
       <ThemedView style={styles.screen}>
-        <View style={styles.titleRow}>
-          <ThemedText type="headlineMd">Open injuries</ThemedText>
-          {injuries != null ? (
-            <Chip label={`${openCount} active`} selected={openCount > 0} />
-          ) : null}
-        </View>
-
-        <SegmentedControl
-          options={[
-            { value: 'graphic', label: 'Graphic' },
-            { value: 'list', label: 'List' },
-          ]}
-          value={view}
-          onChange={setView}
-        />
-
         {view === 'graphic' ? (
           <>
-            <SegmentedControl
-              options={[
-                { value: 'front', label: 'Front' },
-                { value: 'back', label: 'Back' },
-              ]}
-              value={side}
-              onChange={setSide}
-            />
             {error != null ? (
               <ThemedText>{error}</ThemedText>
             ) : (
               <Card style={styles.mapCard} elevated>
+                <View
+                  style={[
+                    styles.sideToggle,
+                    {
+                      backgroundColor: theme.surfaceContainerLow,
+                      borderColor: theme.outlineVariant,
+                    },
+                  ]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: side === 'front' }}
+                    hitSlop={Spacing.one}
+                    onPress={() => setSide('front')}
+                    style={({ pressed }) => [
+                      styles.sideOption,
+                      side === 'front' && { backgroundColor: theme.secondaryContainer },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText
+                      type="labelMd"
+                      themeColor={side === 'front' ? 'onSurface' : 'textSecondary'}>
+                      Front
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: side === 'back' }}
+                    hitSlop={Spacing.one}
+                    onPress={() => setSide('back')}
+                    style={({ pressed }) => [
+                      styles.sideOption,
+                      side === 'back' && { backgroundColor: theme.secondaryContainer },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText
+                      type="labelMd"
+                      themeColor={side === 'back' ? 'onSurface' : 'textSecondary'}>
+                      Back
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={Spacing.one}
+                  onPress={() => setView('list')}
+                  style={({ pressed }) => [styles.listLink, pressed && styles.pressed]}>
+                  <ThemedText type="linkPrimary">List</ThemedText>
+                </Pressable>
                 <BodyOverviewMap
                   side={side}
                   openCounts={openCounts}
@@ -193,138 +216,89 @@ export default function OpenInjuriesScreen() {
                 />
               </Card>
             )}
-            {injuries != null && injuries.length > 0 ? (
-              <View style={styles.focusBlock}>
-                <ThemedText type="titleMd">Immediate Focus</ThemedText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.focusRow}>
-                  {injuries.map((injury) => {
-                    const landmark = getLandmarkById(injury.landmarkId);
-                    const title =
-                      landmark == null
-                        ? injury.landmarkId
-                        : formatLandmarkLabel(landmark, injury.limb);
-                    return (
-                      <Pressable
-                        key={injury.id}
-                        accessibilityRole="button"
-                        onPress={() => openInjury(injury.id)}
-                        style={({ pressed }) => pressed && styles.pressed}>
-                        <Card style={styles.focusCard}>
-                          <Chip label="OPEN" selected />
-                          <ThemedText type="titleMd" numberOfLines={1}>
-                            {title}
-                          </ThemedText>
-                          <ThemedText type="bodySm" themeColor="textSecondary" numberOfLines={2}>
-                            {injury.description}
-                          </ThemedText>
-                        </Card>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null}
+            <AppButton label="Log injury" onPress={openLogInjury} style={styles.logButton} />
           </>
-        ) : error != null ? (
-          <ThemedText>{error}</ThemedText>
-        ) : injuries == null ? null : injuries.length === 0 ? (
-          <ThemedView style={styles.empty}>
-            <ThemedText>No open injuries yet.</ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={openLogInjury}
-              style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
-              <ThemedText type="linkPrimary">Log injury</ThemedText>
-            </Pressable>
-          </ThemedView>
         ) : (
-          <ScrollView contentContainerStyle={styles.list}>
-            {linkError != null ? <ThemedText>{linkError}</ThemedText> : null}
-            {groups.map((group) => (
-              <View key={group.region} style={styles.section}>
-                <ThemedText type="labelMd" themeColor="textSecondary">
-                  {regionLabel(group.region)}
-                </ThemedText>
-                {group.items.map((injury) => {
-                  const landmark = getLandmarkById(injury.landmarkId);
-                  const title =
-                    landmark == null
-                      ? injury.landmarkId
-                      : formatLandmarkLabel(landmark, injury.limb);
-                  const latest = latestSolutions[injury.id];
+          <>
+            <View style={styles.listToolbar}>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={Spacing.one}
+                onPress={() => setView('graphic')}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText type="linkPrimary">Graphic</ThemedText>
+              </Pressable>
+            </View>
+            {error != null ? (
+              <ThemedText>{error}</ThemedText>
+            ) : injuries == null ? null : injuries.length === 0 ? (
+              <ThemedView style={styles.empty}>
+                <ThemedText>No open injuries yet.</ThemedText>
+                <AppButton label="Log injury" onPress={openLogInjury} style={styles.logButton} />
+              </ThemedView>
+            ) : (
+              <ScrollView contentContainerStyle={styles.list}>
+                {linkError != null ? <ThemedText>{linkError}</ThemedText> : null}
+                {groups.map((group) => (
+                  <View key={group.region} style={styles.section}>
+                    <ThemedText type="labelMd" themeColor="textSecondary">
+                      {regionLabel(group.region)}
+                    </ThemedText>
+                    {group.items.map((injury) => {
+                      const landmark = getLandmarkById(injury.landmarkId);
+                      const title =
+                        landmark == null
+                          ? injury.landmarkId
+                          : formatLandmarkLabel(landmark, injury.limb);
+                      const latest = latestSolutions[injury.id];
 
-                  return (
-                    <Card key={injury.id} style={styles.rowCard}>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => openInjury(injury.id)}
-                        style={({ pressed }) => pressed && styles.pressed}>
-                        <ThemedText type="titleMd">{title}</ThemedText>
-                        <ThemedText type="bodyMd" themeColor="textSecondary" numberOfLines={2}>
-                          {injury.description}
-                        </ThemedText>
-                      </Pressable>
-                      {latest != null ? (
-                        <>
-                          <ThemedText type="bodySm" numberOfLines={1}>
-                            {latest.body}
-                          </ThemedText>
-                          {latest.url != null && isHttpUrl(latest.url) ? (
-                            <Pressable
-                              accessibilityRole="link"
-                              onPress={() => {
-                                const url = latest.url;
-                                if (url == null || !isHttpUrl(url)) {
-                                  return;
-                                }
-                                Linking.openURL(url).catch((caught: unknown) => {
-                                  setLinkError(
-                                    caught instanceof Error
-                                      ? caught.message
-                                      : `Cannot open URL (${url})`,
-                                  );
-                                });
-                              }}
-                              style={({ pressed }) => pressed && styles.pressed}>
-                              <ThemedText type="linkPrimary">Open link</ThemedText>
-                            </Pressable>
+                      return (
+                        <Card key={injury.id} style={styles.rowCard}>
+                          <Pressable
+                            accessibilityRole="button"
+                            onPress={() => openInjury(injury.id)}
+                            style={({ pressed }) => pressed && styles.pressed}>
+                            <ThemedText type="titleMd">{title}</ThemedText>
+                            <ThemedText type="bodyMd" themeColor="textSecondary" numberOfLines={2}>
+                              {injury.description}
+                            </ThemedText>
+                          </Pressable>
+                          {latest != null ? (
+                            <>
+                              <ThemedText type="bodySm" numberOfLines={1}>
+                                {latest.body}
+                              </ThemedText>
+                              {latest.url != null && isHttpUrl(latest.url) ? (
+                                <Pressable
+                                  accessibilityRole="link"
+                                  onPress={() => {
+                                    const url = latest.url;
+                                    if (url == null || !isHttpUrl(url)) {
+                                      return;
+                                    }
+                                    Linking.openURL(url).catch((caught: unknown) => {
+                                      setLinkError(
+                                        caught instanceof Error
+                                          ? caught.message
+                                          : `Cannot open URL (${url})`,
+                                      );
+                                    });
+                                  }}
+                                  style={({ pressed }) => pressed && styles.pressed}>
+                                  <ThemedText type="linkPrimary">Open link</ThemedText>
+                                </Pressable>
+                              ) : null}
+                            </>
                           ) : null}
-                        </>
-                      ) : null}
-                    </Card>
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
+                        </Card>
+                      );
+                    })}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </>
         )}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Log injury"
-          onPress={openLogInjury}
-          style={({ pressed }) => [
-            styles.fab,
-            { backgroundColor: theme.primaryContainer },
-            pressed && styles.fabPressed,
-          ]}>
-          <SymbolView
-            name={{ ios: 'plus', android: 'add', web: 'add' }}
-            size={20}
-            tintColor={theme.onPrimary}
-            fallback={
-              <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
-                +
-              </ThemedText>
-            }
-          />
-          <ThemedText type="labelMd" style={{ color: theme.onPrimary }}>
-            Log injury
-          </ThemedText>
-        </Pressable>
       </ThemedView>
     </>
   );
@@ -362,13 +336,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.spaceMd,
     gap: Spacing.spaceSm,
-    paddingBottom: Spacing.six,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.spaceSm,
   },
   headerActions: {
     flexDirection: 'row',
@@ -379,21 +346,39 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 320,
     padding: Spacing.spaceXs,
+    overflow: 'hidden',
   },
-  focusBlock: {
-    gap: Spacing.spaceXs,
+  sideToggle: {
+    position: 'absolute',
+    top: Spacing.spaceXs,
+    right: Spacing.spaceXs,
+    zIndex: 2,
+    flexDirection: 'row',
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 2,
+    gap: 2,
   },
-  focusRow: {
-    gap: Spacing.spaceSm,
-    paddingRight: Spacing.spaceMd,
+  sideOption: {
+    paddingHorizontal: Spacing.spaceXs,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  focusCard: {
-    width: 220,
-    gap: Spacing.spaceXs,
+  listLink: {
+    position: 'absolute',
+    right: Spacing.spaceSm,
+    bottom: Spacing.spaceSm,
+    zIndex: 2,
+    paddingHorizontal: Spacing.spaceXs,
+    paddingVertical: 4,
+  },
+  listToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   list: {
     gap: Spacing.spaceMd,
-    paddingBottom: Spacing.six,
+    paddingBottom: Spacing.spaceXl,
   },
   section: {
     gap: Spacing.spaceXs,
@@ -404,27 +389,12 @@ const styles = StyleSheet.create({
   empty: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: Spacing.spaceMd,
-  },
-  cta: {
-    paddingVertical: Spacing.spaceXs,
     paddingHorizontal: Spacing.spaceMd,
   },
-  fab: {
-    position: 'absolute',
-    right: Spacing.spaceMd,
-    bottom: Spacing.spaceMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.spaceXs,
-    paddingHorizontal: Spacing.spaceLg,
-    paddingVertical: Spacing.spaceSm,
-    borderRadius: Radii.full,
-  },
-  fabPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.97 }],
+  logButton: {
+    alignSelf: 'stretch',
   },
   pressed: {
     opacity: 0.7,

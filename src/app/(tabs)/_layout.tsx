@@ -99,6 +99,9 @@ export default function TabsLayout() {
           fontSize: 20,
           fontWeight: '600',
         },
+        headerRightContainerStyle: {
+          paddingRight: Spacing.spaceSm,
+        },
         sceneStyle: { backgroundColor: theme.background },
       }}>
       <Tabs.Screen
