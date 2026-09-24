@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Plan"
+  short_description: "Phased plan.md interview"
+policy:
+  allow_implicit_invocation: false

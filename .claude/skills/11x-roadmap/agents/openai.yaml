@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Roadmap"
+  short_description: "Decompose a goal into vertical slices"
+policy:
+  allow_implicit_invocation: false

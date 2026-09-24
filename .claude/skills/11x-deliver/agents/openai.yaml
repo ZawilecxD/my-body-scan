@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Deliver"
+  short_description: "Unattended ticket to MR"
+policy:
+  allow_implicit_invocation: false

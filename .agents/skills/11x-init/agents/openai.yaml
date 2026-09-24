@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Init"
+  short_description: "Scaffold context/ and seed global standards"
+policy:
+  allow_implicit_invocation: false

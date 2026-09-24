@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Standards Update"
+  short_description: "Create, edit, or promote one standard"
+policy:
+  allow_implicit_invocation: false

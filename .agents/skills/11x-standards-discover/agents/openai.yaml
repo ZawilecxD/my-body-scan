@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Standards Discover"
+  short_description: "Mine standards from config and repeated code"
+policy:
+  allow_implicit_invocation: false

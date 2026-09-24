@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x PRD"
+  short_description: "Write schema-conformant prd.md from notes"
+policy:
+  allow_implicit_invocation: false
