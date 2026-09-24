@@ -221,8 +221,8 @@ Forward-only. The v8 transaction copies every legacy row before `DROP TABLE`. A 
 
 #### Automated
 
-- [x] 2.1 Injury detail shows one update timeline and form
-- [x] 2.2 `npx tsc --noEmit` exits 0
+- [x] 2.1 Injury detail shows one update timeline and form — 7646ca2
+- [x] 2.2 `npx tsc --noEmit` exits 0 — 7646ca2
 
 #### Manual
 

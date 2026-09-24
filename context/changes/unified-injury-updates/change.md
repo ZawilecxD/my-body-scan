@@ -2,7 +2,7 @@
 change_id: unified-injury-updates
 title: Unify injury comments and severity into updates
 type: feature
-status: implementing
+status: impl_reviewed
 created: 2026-09-24
 updated: 2026-09-24
 archived_at: null
