@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Domain Discover"
+  short_description: "Bootstrap the project glossary"
+policy:
+  allow_implicit_invocation: false

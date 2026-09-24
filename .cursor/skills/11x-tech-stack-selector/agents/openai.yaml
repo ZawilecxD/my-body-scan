@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Tech Stack Selector"
+  short_description: "Pick starter and stack after the PRD"
+policy:
+  allow_implicit_invocation: false

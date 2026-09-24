@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x New"
+  short_description: "Start a change or an effort"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Lesson"
+  short_description: "Append one durable lesson"
+policy:
+  allow_implicit_invocation: false
