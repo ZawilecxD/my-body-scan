@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Frame"
+  short_description: "Challenge what/why before planning how"
+policy:
+  allow_implicit_invocation: false

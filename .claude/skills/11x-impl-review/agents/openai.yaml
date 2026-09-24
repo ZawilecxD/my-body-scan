@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Impl Review"
+  short_description: "Report-only post-implementation review"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Bootstrapper"
+  short_description: "Scaffold the app without clobbering context/"
+policy:
+  allow_implicit_invocation: false

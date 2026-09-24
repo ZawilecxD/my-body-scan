@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Archive"
+  short_description: "Archive a finished change or effort"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Plan Review"
+  short_description: "Report-only pre-implementation plan review"
+policy:
+  allow_implicit_invocation: false
