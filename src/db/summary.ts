@@ -1,17 +1,16 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { listCommentsForInjury } from '@/db/comments';
-import { listSeverityReadingsForInjury } from '@/db/readings';
 import { listSolutionsForInjury } from '@/db/solutions';
-import type { Comment, Injury, InjuryStatus, Solution } from '@/domain/injury';
+import { listInjuryUpdatesForInjury } from '@/db/updates';
+import type { Injury, InjuryStatus, InjuryUpdate, Solution } from '@/domain/injury';
 import { parseLimb, REGION_ORDER } from '@/domain/landmarks';
 import {
-  commentInWindow,
   injuryOverlapsWindow,
   landmarkLabelForInjury,
   pickLatestSeverity,
   regionForInjury,
   resolveWindow,
+  updateInWindow,
   type SummaryConfig,
   type SummaryDocument,
   type SummaryInjurySection,
@@ -62,20 +61,22 @@ export async function loadSummary(
     }
 
     let latestSeverity = null as SummaryInjurySection['latestSeverity'];
-    if (config.includeLatestSeverity) {
-      const readings = await listSeverityReadingsForInjury(db, injury.id);
-      latestSeverity = pickLatestSeverity(readings);
+    let notes: InjuryUpdate[] = [];
+    if (config.includeLatestSeverity || config.includeNotes) {
+      const updates = await listInjuryUpdatesForInjury(db, injury.id);
+      if (config.includeLatestSeverity) {
+        latestSeverity = pickLatestSeverity(updates);
+      }
+      if (config.includeNotes) {
+        notes = updates.filter(
+          (update) => update.note != null && updateInWindow(update.createdAt, window),
+        );
+      }
     }
 
     let solutions: Solution[] = [];
     if (config.includeSolutions) {
       solutions = await listSolutionsForInjury(db, injury.id);
-    }
-
-    let comments: Comment[] = [];
-    if (config.includeComments) {
-      const allComments = await listCommentsForInjury(db, injury.id);
-      comments = allComments.filter((comment) => commentInWindow(comment, window));
     }
 
     sections.push({
@@ -85,7 +86,7 @@ export async function loadSummary(
       description,
       latestSeverity,
       solutions,
-      comments,
+      notes,
     });
   }
 

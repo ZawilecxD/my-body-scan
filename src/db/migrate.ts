@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 7;
+export const DATABASE_VERSION = 8;
 
 const COMMENTS_DDL = `
 CREATE TABLE IF NOT EXISTS comments (
@@ -51,6 +51,18 @@ CREATE TABLE IF NOT EXISTS severity_readings (
 );
 `;
 
+const INJURY_UPDATES_DDL = `
+CREATE TABLE IF NOT EXISTS injury_updates (
+  id INTEGER PRIMARY KEY NOT NULL,
+  injury_id INTEGER NOT NULL,
+  severity INTEGER,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  CHECK (severity IS NOT NULL OR note IS NOT NULL),
+  CHECK (severity IS NULL OR (severity >= 0 AND severity <= 10))
+);
+`;
+
 const ILLNESSES_DDL = `
 CREATE TABLE IF NOT EXISTS illnesses (
   id INTEGER PRIMARY KEY NOT NULL,
@@ -92,15 +104,29 @@ INSERT INTO injury_events (injury_id, type, solution_id, created_at)
   SELECT injury_id, 'solution_added', id, created_at FROM solutions;
 `;
 
-/** V6 shape only — no user_version stamp (must not stamp 7 without illness tables). */
+/** V6 shape only — no user_version stamp. */
 const V6_SCHEMA_FROM_V5 = `
 ${SEVERITY_READINGS_DDL}
 `;
 
-const V7_FROM_V6 = `
+/** Illness tables only — no user_version stamp (must not stamp 8 without updates). */
+const V7_SCHEMA_FROM_V6 = `
 ${ILLNESSES_DDL}
 ${ILLNESS_EPISODES_DDL}
 ${SYMPTOM_TACTICS_DDL}
+`;
+
+/** Copy legacy rows, drop their tables, stamp 8. Legacy tables must already exist. */
+const V8_FROM_LEGACY = `
+${INJURY_UPDATES_DDL}
+INSERT INTO injury_updates (injury_id, severity, note, created_at)
+  SELECT injury_id, NULL, body, created_at FROM comments
+  ORDER BY created_at ASC, id ASC;
+INSERT INTO injury_updates (injury_id, severity, note, created_at)
+  SELECT injury_id, value, NULL, created_at FROM severity_readings
+  ORDER BY created_at ASC, id ASC;
+DROP TABLE comments;
+DROP TABLE severity_readings;
 PRAGMA user_version = ${DATABASE_VERSION};
 `;
 
@@ -126,10 +152,9 @@ CREATE TABLE IF NOT EXISTS injuries (
   limb TEXT,
   archived_at TEXT
 );
-${COMMENTS_DDL}
 ${SOLUTIONS_DDL_V5}
 ${INJURY_EVENTS_DDL}
-${SEVERITY_READINGS_DDL}
+${INJURY_UPDATES_DDL}
 ${ILLNESSES_DDL}
 ${ILLNESS_EPISODES_DDL}
 ${SYMPTOM_TACTICS_DDL}
@@ -148,7 +173,8 @@ ${COMMENTS_DDL}
 ${SOLUTIONS_DDL_LEGACY}
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
-${V7_FROM_V6}
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
 `);
     });
     return;
@@ -162,7 +188,8 @@ ${COMMENTS_DDL}
 ${SOLUTIONS_DDL_LEGACY}
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
-${V7_FROM_V6}
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
 `);
     });
     return;
@@ -174,7 +201,8 @@ ${V7_FROM_V6}
 ALTER TABLE injuries ADD COLUMN archived_at TEXT;
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
-${V7_FROM_V6}
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
 `);
     });
     return;
@@ -185,7 +213,8 @@ ${V7_FROM_V6}
       await db.execAsync(`
 ${V5_SCHEMA_FROM_EXISTING}
 ${V6_SCHEMA_FROM_V5}
-${V7_FROM_V6}
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
 `);
     });
     return;
@@ -195,7 +224,8 @@ ${V7_FROM_V6}
     await db.withTransactionAsync(async () => {
       await db.execAsync(`
 ${V6_SCHEMA_FROM_V5}
-${V7_FROM_V6}
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
 `);
     });
     return;
@@ -203,7 +233,17 @@ ${V7_FROM_V6}
 
   if (currentDbVersion === 6) {
     await db.withTransactionAsync(async () => {
-      await db.execAsync(V7_FROM_V6);
+      await db.execAsync(`
+${V7_SCHEMA_FROM_V6}
+${V8_FROM_LEGACY}
+`);
+    });
+    return;
+  }
+
+  if (currentDbVersion === 7) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(V8_FROM_LEGACY);
     });
   }
 }
