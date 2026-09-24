@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Refactor Discover"
+  short_description: "Find deepening / simplification opportunities"
+policy:
+  allow_implicit_invocation: false
