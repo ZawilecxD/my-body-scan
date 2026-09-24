@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Review Triage"
+  short_description: "Apply chosen plan/impl-review findings"
+policy:
+  allow_implicit_invocation: false

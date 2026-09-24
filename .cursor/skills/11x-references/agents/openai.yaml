@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x References"
+  short_description: "Load a shared 11x reference snippet"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Diagnose"
+  short_description: "Feedback-loop-first debugging"
+policy:
+  allow_implicit_invocation: true

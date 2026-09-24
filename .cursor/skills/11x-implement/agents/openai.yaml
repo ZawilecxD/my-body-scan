@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Implement"
+  short_description: "Execute one plan phase and tick Progress"
+policy:
+  allow_implicit_invocation: false

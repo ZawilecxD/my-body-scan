@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Domain"
+  short_description: "Sharpen a colliding glossary term"
+policy:
+  allow_implicit_invocation: true

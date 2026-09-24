@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x Shape"
+  short_description: "Turn an idea into shape-notes.md"
+policy:
+  allow_implicit_invocation: false

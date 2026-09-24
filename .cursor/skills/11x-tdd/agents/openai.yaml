@@ -1,0 +1,5 @@
+interface:
+  display_name: "11x TDD"
+  short_description: "Test-first sibling of implement"
+policy:
+  allow_implicit_invocation: false
