@@ -2,6 +2,7 @@
 
 Ticket: roadmap-§9-unified-injury-updates
 Status: mr_ready
+MR: https://github.com/ZawilecxD/my-body-scan/pull/7
 
 ## What landed
 
