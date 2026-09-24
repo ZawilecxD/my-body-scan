@@ -47,6 +47,28 @@ Greenfield Android MVP. Expo SDK 57 scaffold, `expo-sqlite`, and `react-native-s
 - **Status:** done
 - **Next:** `/11x-new archive-and-reopen archive healed injuries and reopen a flare-up`
 
+## Completed extensions
+
+### 5. Export / backup
+
+- **Outcome:** On-device export and restore protect the local injury log during phone changes or reinstalls.
+- **Status:** done
+
+### 6. Severity trend
+
+- **Outcome:** Severity readings over time show whether an injury is changing without diagnosis or generated advice.
+- **Status:** done; superseded by the unified update model in slice 9
+
+### 7. Physio-ready summary
+
+- **Outcome:** One-way text/PDF summaries can be shared for a physio visit without accounts or multi-user sync.
+- **Status:** done; expanded by configurable PL/EN summary work in slice 14
+
+### 8. Illness & disease log
+
+- **Outcome:** Whole-body illnesses and episodes can be recorded separately from landmark injuries.
+- **Status:** implemented; further expansion parked so the injury/rehab loop remains the product focus
+
 ## Next product phase
 
 The functional MVP and the first post-MVP capabilities are complete. The following slices are the approved sequence for turning the prototype into a focused daily-use product. Each item is a separate change when started; do not implement the whole list as one effort.
