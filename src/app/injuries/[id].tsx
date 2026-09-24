@@ -35,13 +35,12 @@ export default function InjuryDetailScreen() {
   const [events, setEvents] = useState<InjuryEvent[]>([]);
   const [eventLabels, setEventLabels] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
-  const [commentBody, setCommentBody] = useState('');
+  const [noteBody, setNoteBody] = useState('');
   const [solutionBody, setSolutionBody] = useState('');
   const [solutionUrl, setSolutionUrl] = useState('');
   const [severityText, setSeverityText] = useState('');
-  const addingComment = useRef(false);
+  const addingUpdate = useRef(false);
   const addingSolution = useRef(false);
-  const addingReading = useRef(false);
   const removingSolution = useRef(false);
   const statusAction = useRef(false);
 
@@ -83,13 +82,15 @@ export default function InjuryDetailScreen() {
   }, [db, id, idValue]);
 
   const landmark = injury == null ? undefined : getLandmarkById(injury.landmarkId);
-  const trimmedComment = commentBody.trim();
+  const trimmedNote = noteBody.trim();
   const trimmedSolution = solutionBody.trim();
   const trimmedSeverity = severityText.trim();
   const parsedSeverity = parseSeverityInput(trimmedSeverity);
   const isOpen = injury?.status === 'open';
   const severityUpdates = updates.filter((update) => update.severity != null);
-  const noteUpdates = updates.filter((update) => update.note != null);
+  const severityFieldOk = trimmedSeverity.length === 0 || parsedSeverity != null;
+  const canAddUpdate =
+    severityFieldOk && (parsedSeverity != null || trimmedNote.length > 0);
 
   async function reloadSolutionsAndEvents() {
     const [nextSolutions, nextEvents] = await Promise.all([
@@ -102,21 +103,26 @@ export default function InjuryDetailScreen() {
     setEventLabels(labels);
   }
 
-  async function onAddComment() {
-    if (addingComment.current || trimmedComment.length === 0 || Number.isNaN(id) || !isOpen) {
+  async function onAddUpdate() {
+    if (addingUpdate.current || !canAddUpdate || Number.isNaN(id) || !isOpen) {
       return;
     }
-    addingComment.current = true;
+    addingUpdate.current = true;
     try {
-      await createInjuryUpdate(db, { injuryId: id, note: commentBody });
+      await createInjuryUpdate(db, {
+        injuryId: id,
+        severity: parsedSeverity,
+        note: noteBody,
+      });
       const next = await listInjuryUpdatesForInjury(db, id);
       setUpdates(next);
-      setCommentBody('');
+      setNoteBody('');
+      setSeverityText('');
       setError(null);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add comment');
+      setError(caught instanceof Error ? caught.message : 'Cannot add update');
     } finally {
-      addingComment.current = false;
+      addingUpdate.current = false;
     }
   }
 
@@ -135,24 +141,6 @@ export default function InjuryDetailScreen() {
       setError(caught instanceof Error ? caught.message : 'Cannot add solution');
     } finally {
       addingSolution.current = false;
-    }
-  }
-
-  async function onAddReading() {
-    if (addingReading.current || parsedSeverity == null || Number.isNaN(id) || !isOpen) {
-      return;
-    }
-    addingReading.current = true;
-    try {
-      await createInjuryUpdate(db, { injuryId: id, severity: parsedSeverity });
-      const next = await listInjuryUpdatesForInjury(db, id);
-      setUpdates(next);
-      setSeverityText('');
-      setError(null);
-    } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Cannot add severity reading');
-    } finally {
-      addingReading.current = false;
     }
   }
 
@@ -327,18 +315,21 @@ export default function InjuryDetailScreen() {
               </>
             ) : null}
 
-            <ThemedText type="smallBold">Severity</ThemedText>
+            <ThemedText type="smallBold">Updates</ThemedText>
             {severityUpdates.length >= 2 ? (
               <SeverityTrendChart points={severityUpdates} stroke={theme.text} />
             ) : null}
-            {severityUpdates.length === 0 ? (
+            {updates.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
-                No severity readings yet.
+                No updates yet.
               </ThemedText>
             ) : (
-              severityUpdates.map((update) => (
+              updates.map((update) => (
                 <ThemedView key={update.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText>{update.severity} / 10</ThemedText>
+                  {update.severity != null ? (
+                    <ThemedText>{update.severity} / 10</ThemedText>
+                  ) : null}
+                  {update.note != null ? <ThemedText>{update.note}</ThemedText> : null}
                   <ThemedText type="small" themeColor="textSecondary">
                     {new Date(update.createdAt).toLocaleString()}
                   </ThemedText>
@@ -348,7 +339,7 @@ export default function InjuryDetailScreen() {
             {isOpen ? (
               <>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Severity 0–10
+                  Severity 0–10 (optional)
                 </ThemedText>
                 <TextInput
                   accessibilityLabel="Severity 0–10"
@@ -357,52 +348,27 @@ export default function InjuryDetailScreen() {
                   onChangeText={setSeverityText}
                   style={[styles.input, inputColors(theme)]}
                 />
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={parsedSeverity == null}
-                  onPress={onAddReading}
-                  style={({ pressed }) => [
-                    styles.save,
-                    { backgroundColor: theme.backgroundSelected },
-                    (parsedSeverity == null || pressed) && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold">Add</ThemedText>
-                </Pressable>
-              </>
-            ) : null}
-
-            <ThemedText type="smallBold">Comments</ThemedText>
-            {noteUpdates.map((update) => (
-              <ThemedView key={update.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{update.note}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(update.createdAt).toLocaleString()}
-                </ThemedText>
-              </ThemedView>
-            ))}
-            {isOpen ? (
-              <>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Add comment
+                  Note (optional)
                 </ThemedText>
                 <TextInput
-                  accessibilityLabel="Comment"
+                  accessibilityLabel="Note"
                   multiline
                   textAlignVertical="top"
-                  value={commentBody}
-                  onChangeText={setCommentBody}
+                  value={noteBody}
+                  onChangeText={setNoteBody}
                   style={[styles.input, styles.inputShort, inputColors(theme)]}
                 />
                 <Pressable
                   accessibilityRole="button"
-                  disabled={trimmedComment.length === 0}
-                  onPress={onAddComment}
+                  disabled={!canAddUpdate}
+                  onPress={onAddUpdate}
                   style={({ pressed }) => [
                     styles.save,
                     { backgroundColor: theme.backgroundSelected },
-                    (trimmedComment.length === 0 || pressed) && styles.pressed,
+                    (!canAddUpdate || pressed) && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Add comment</ThemedText>
+                  <ThemedText type="smallBold">Add update</ThemedText>
                 </Pressable>
               </>
             ) : null}

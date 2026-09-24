@@ -15,6 +15,10 @@ Status: in progress
 
 ## Reviewer checklist (manual)
 
+- [ ] On an open injury, save severity only, note only, and both; confirm both-empty and a non-integer severity do not save.
+- [ ] Confirm an upgraded database still shows old comment text and old severity values, oldest first, and the sparkline uses only severity points.
+- [ ] Archive hides the form; reopen shows it. Export then restore on this build round-trips updates. Summary "Latest severity" and "Notes" match the timeline.
+- [ ] Confirm the form has no treatment, sleep, mood, or other extra fields, and no diagnosis copy.
 - [ ] Plan-review S1 (not applied): backup restore still does not require `updates[].injuryId` to reference an injury in the payload.
 - [ ] Plan-review N1 (not applied): a legacy severity outside 0–10 fails the v8 CHECK and leaves the database on the previous version.
 

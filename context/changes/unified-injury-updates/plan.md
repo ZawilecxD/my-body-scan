@@ -207,11 +207,11 @@ Forward-only. The v8 transaction copies every legacy row before `DROP TABLE`. A 
 
 #### Automated
 
-- [x] 1.1 Schema v8 migration copies legacy comments and readings
-- [x] 1.2 InjuryUpdate domain type and updates db module
-- [x] 1.3 Backup dump/parse/replace uses updates
-- [x] 1.4 Summary reads notes and latest severity from updates
-- [x] 1.5 `npx tsc --noEmit` exits 0
+- [x] 1.1 Schema v8 migration copies legacy comments and readings — 7417c3f
+- [x] 1.2 InjuryUpdate domain type and updates db module — 7417c3f
+- [x] 1.3 Backup dump/parse/replace uses updates — 7417c3f
+- [x] 1.4 Summary reads notes and latest severity from updates — 7417c3f
+- [x] 1.5 `npx tsc --noEmit` exits 0 — 7417c3f
 
 #### Manual
 
@@ -221,8 +221,8 @@ Forward-only. The v8 transaction copies every legacy row before `DROP TABLE`. A 
 
 #### Automated
 
-- [ ] 2.1 Injury detail shows one update timeline and form
-- [ ] 2.2 `npx tsc --noEmit` exits 0
+- [x] 2.1 Injury detail shows one update timeline and form
+- [x] 2.2 `npx tsc --noEmit` exits 0
 
 #### Manual
 
