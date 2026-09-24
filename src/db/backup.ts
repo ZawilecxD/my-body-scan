@@ -4,12 +4,11 @@ import { DATABASE_VERSION } from '@/db/migrate';
 import type { BackupPayload } from '@/domain/backup';
 import type { Illness, IllnessEpisode, SymptomTactic } from '@/domain/illness';
 import type {
-  Comment,
   Injury,
   InjuryEvent,
   InjuryEventType,
   InjuryStatus,
-  SeverityReading,
+  InjuryUpdate,
   Solution,
 } from '@/domain/injury';
 import { getLandmarkById, type Limb } from '@/domain/landmarks';
@@ -24,10 +23,11 @@ type InjuryRow = {
   limb: string | null;
 };
 
-type CommentRow = {
+type InjuryUpdateRow = {
   id: number;
   injury_id: number;
-  body: string;
+  severity: number | null;
+  note: string | null;
   created_at: string;
 };
 
@@ -45,13 +45,6 @@ type EventRow = {
   injury_id: number;
   type: string;
   solution_id: number | null;
-  created_at: string;
-};
-
-type SeverityReadingRow = {
-  id: number;
-  injury_id: number;
-  value: number;
   created_at: string;
 };
 
@@ -81,17 +74,14 @@ export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
   const injuryRows = await db.getAllAsync<InjuryRow>(
     'SELECT id, landmark_id, description, status, created_at, archived_at, limb FROM injuries ORDER BY id ASC',
   );
-  const commentRows = await db.getAllAsync<CommentRow>(
-    'SELECT id, injury_id, body, created_at FROM comments ORDER BY id ASC',
+  const updateRows = await db.getAllAsync<InjuryUpdateRow>(
+    'SELECT id, injury_id, severity, note, created_at FROM injury_updates ORDER BY id ASC',
   );
   const solutionRows = await db.getAllAsync<SolutionRow>(
     'SELECT id, injury_id, body, url, created_at, removed_at FROM solutions ORDER BY id ASC',
   );
   const eventRows = await db.getAllAsync<EventRow>(
     'SELECT id, injury_id, type, solution_id, created_at FROM injury_events ORDER BY id ASC',
-  );
-  const readingRows = await db.getAllAsync<SeverityReadingRow>(
-    'SELECT id, injury_id, value, created_at FROM severity_readings ORDER BY id ASC',
   );
   const illnessRows = await db.getAllAsync<IllnessRow>(
     'SELECT id, name, notes, created_at FROM illnesses ORDER BY id ASC',
@@ -108,10 +98,9 @@ export async function dumpBackup(db: SQLiteDatabase): Promise<BackupPayload> {
     schemaVersion: DATABASE_VERSION,
     exportedAt: new Date().toISOString(),
     injuries: injuryRows.map(mapInjuryRow),
-    comments: commentRows.map(mapCommentRow),
+    updates: updateRows.map(mapInjuryUpdateRow),
     solutions: solutionRows.map(mapSolutionRow),
     events: eventRows.map(mapEventRow),
-    readings: readingRows.map(mapSeverityReadingRow),
     illnesses: illnessRows.map(mapIllnessRow),
     episodes: episodeRows.map(mapEpisodeRow),
     tactics: tacticRows.map(mapTacticRow),
@@ -146,17 +135,14 @@ export function parseBackupJson(text: string): BackupPayload {
   if (!Array.isArray(record.injuries)) {
     throw new Error('Cannot parse backup: injuries must be an array');
   }
-  if (!Array.isArray(record.comments)) {
-    throw new Error('Cannot parse backup: comments must be an array');
+  if (!Array.isArray(record.updates)) {
+    throw new Error('Cannot parse backup: updates must be an array');
   }
   if (!Array.isArray(record.solutions)) {
     throw new Error('Cannot parse backup: solutions must be an array');
   }
   if (!Array.isArray(record.events)) {
     throw new Error('Cannot parse backup: events must be an array');
-  }
-  if (!Array.isArray(record.readings)) {
-    throw new Error('Cannot parse backup: readings must be an array');
   }
   if (!Array.isArray(record.illnesses)) {
     throw new Error('Cannot parse backup: illnesses must be an array');
@@ -169,10 +155,9 @@ export function parseBackupJson(text: string): BackupPayload {
   }
 
   const injuries = record.injuries.map((item, index) => parseInjury(item, index));
-  const comments = record.comments.map((item, index) => parseComment(item, index));
+  const updates = record.updates.map((item, index) => parseUpdate(item, index));
   const solutions = record.solutions.map((item, index) => parseSolution(item, index));
   const events = record.events.map((item, index) => parseEvent(item, index));
-  const readings = record.readings.map((item, index) => parseReading(item, index));
   const illnesses = record.illnesses.map((item, index) => parseIllness(item, index));
   const episodes = record.episodes.map((item, index) => parseEpisode(item, index));
   const tactics = record.tactics.map((item, index) => parseTactic(item, index));
@@ -182,10 +167,9 @@ export function parseBackupJson(text: string): BackupPayload {
     schemaVersion: DATABASE_VERSION,
     exportedAt: record.exportedAt,
     injuries,
-    comments,
+    updates,
     solutions,
     events,
-    readings,
     illnesses,
     episodes,
     tactics,
@@ -201,9 +185,8 @@ export async function replaceFromBackup(
   await db.withTransactionAsync(async () => {
     await db.execAsync(`
 DELETE FROM injury_events;
-DELETE FROM comments;
+DELETE FROM injury_updates;
 DELETE FROM solutions;
-DELETE FROM severity_readings;
 DELETE FROM injuries;
 DELETE FROM illness_episodes;
 DELETE FROM symptom_tactics;
@@ -223,13 +206,14 @@ DELETE FROM illnesses;
       );
     }
 
-    for (const comment of payload.comments) {
+    for (const update of payload.updates) {
       await db.runAsync(
-        'INSERT INTO comments (id, injury_id, body, created_at) VALUES (?, ?, ?, ?)',
-        comment.id,
-        comment.injuryId,
-        comment.body,
-        comment.createdAt,
+        'INSERT INTO injury_updates (id, injury_id, severity, note, created_at) VALUES (?, ?, ?, ?, ?)',
+        update.id,
+        update.injuryId,
+        update.severity,
+        update.note,
+        update.createdAt,
       );
     }
 
@@ -253,16 +237,6 @@ DELETE FROM illnesses;
         event.type,
         event.solutionId,
         event.createdAt,
-      );
-    }
-
-    for (const reading of payload.readings) {
-      await db.runAsync(
-        'INSERT INTO severity_readings (id, injury_id, value, created_at) VALUES (?, ?, ?, ?)',
-        reading.id,
-        reading.injuryId,
-        reading.value,
-        reading.createdAt,
       );
     }
 
@@ -352,16 +326,26 @@ function parseInjury(value: unknown, index: number): Injury {
   return { id, landmarkId, description, status, createdAt, archivedAt, limb };
 }
 
-function parseComment(value: unknown, index: number): Comment {
+function parseUpdate(value: unknown, index: number): InjuryUpdate {
   if (value == null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`Cannot parse backup: comments[${index}] must be an object`);
+    throw new Error(`Cannot parse backup: updates[${index}] must be an object`);
   }
   const row = value as Record<string, unknown>;
+  const severity = requireNullableNumber(row.severity, `updates[${index}].severity`);
+  if (severity != null && (severity < 0 || severity > 10)) {
+    throw new Error(`Cannot parse backup: updates[${index}].severity must be an integer 0–10`);
+  }
+  const noteRaw = requireNullableString(row.note, `updates[${index}].note`);
+  const note = noteRaw == null || noteRaw.length === 0 ? null : noteRaw;
+  if (severity == null && note == null) {
+    throw new Error(`Cannot parse backup: updates[${index}] needs a severity or a note`);
+  }
   return {
-    id: requireNumber(row.id, `comments[${index}].id`),
-    injuryId: requireNumber(row.injuryId, `comments[${index}].injuryId`),
-    body: requireNonEmptyString(row.body, `comments[${index}].body`),
-    createdAt: requireNonEmptyString(row.createdAt, `comments[${index}].createdAt`),
+    id: requireNumber(row.id, `updates[${index}].id`),
+    injuryId: requireNumber(row.injuryId, `updates[${index}].injuryId`),
+    severity,
+    note,
+    createdAt: requireNonEmptyString(row.createdAt, `updates[${index}].createdAt`),
   };
 }
 
@@ -392,23 +376,6 @@ function parseEvent(value: unknown, index: number): InjuryEvent {
     type: parseEventType(row.type, `events[${index}].type`),
     solutionId: requireNullableNumber(row.solutionId, `events[${index}].solutionId`),
     createdAt: requireNonEmptyString(row.createdAt, `events[${index}].createdAt`),
-  };
-}
-
-function parseReading(value: unknown, index: number): SeverityReading {
-  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`Cannot parse backup: readings[${index}] must be an object`);
-  }
-  const row = value as Record<string, unknown>;
-  const readingValue = requireNumber(row.value, `readings[${index}].value`);
-  if (readingValue < 0 || readingValue > 10) {
-    throw new Error(`Cannot parse backup: readings[${index}].value must be an integer 0–10`);
-  }
-  return {
-    id: requireNumber(row.id, `readings[${index}].id`),
-    injuryId: requireNumber(row.injuryId, `readings[${index}].injuryId`),
-    value: readingValue,
-    createdAt: requireNonEmptyString(row.createdAt, `readings[${index}].createdAt`),
   };
 }
 
@@ -466,11 +433,12 @@ function mapInjuryRow(row: InjuryRow): Injury {
   };
 }
 
-function mapCommentRow(row: CommentRow): Comment {
+function mapInjuryUpdateRow(row: InjuryUpdateRow): InjuryUpdate {
   return {
     id: row.id,
     injuryId: row.injury_id,
-    body: row.body,
+    severity: row.severity,
+    note: row.note == null || row.note.length === 0 ? null : row.note,
     createdAt: row.created_at,
   };
 }
@@ -492,15 +460,6 @@ function mapEventRow(row: EventRow): InjuryEvent {
     injuryId: row.injury_id,
     type: parseEventType(row.type, `event ${row.id} type`),
     solutionId: row.solution_id,
-    createdAt: row.created_at,
-  };
-}
-
-function mapSeverityReadingRow(row: SeverityReadingRow): SeverityReading {
-  return {
-    id: row.id,
-    injuryId: row.injury_id,
-    value: row.value,
     createdAt: row.created_at,
   };
 }

@@ -7,10 +7,9 @@ import Svg, { Polyline } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { createComment, listCommentsForInjury } from '@/db/comments';
 import { listEventsForInjury } from '@/db/events';
 import { archiveInjury, getInjuryById, reopenInjury } from '@/db/injuries';
-import { createSeverityReading, listSeverityReadingsForInjury } from '@/db/readings';
+import { createInjuryUpdate, listInjuryUpdatesForInjury } from '@/db/updates';
 import {
   createSolution,
   getSolutionById,
@@ -18,7 +17,7 @@ import {
   removeSolution,
 } from '@/db/solutions';
 import { isHttpUrl } from '@/domain/http-url';
-import type { Comment, Injury, InjuryEvent, SeverityReading, Solution } from '@/domain/injury';
+import type { Injury, InjuryEvent, InjuryUpdate, Solution } from '@/domain/injury';
 import { formatLandmarkLabel, getLandmarkById } from '@/domain/landmarks';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -31,9 +30,8 @@ export default function InjuryDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
   const [injury, setInjury] = useState<Injury | null | undefined>(undefined);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [updates, setUpdates] = useState<InjuryUpdate[]>([]);
   const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [readings, setReadings] = useState<SeverityReading[]>([]);
   const [events, setEvents] = useState<InjuryEvent[]>([]);
   const [eventLabels, setEventLabels] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -67,9 +65,8 @@ export default function InjuryDetailScreen() {
         }
         setError(null);
         setInjury(loaded.injury);
-        setComments(loaded.comments);
+        setUpdates(loaded.updates);
         setSolutions(loaded.solutions);
-        setReadings(loaded.readings);
         setEvents(loaded.events);
         setEventLabels(loaded.eventLabels);
       })
@@ -91,6 +88,8 @@ export default function InjuryDetailScreen() {
   const trimmedSeverity = severityText.trim();
   const parsedSeverity = parseSeverityInput(trimmedSeverity);
   const isOpen = injury?.status === 'open';
+  const severityUpdates = updates.filter((update) => update.severity != null);
+  const noteUpdates = updates.filter((update) => update.note != null);
 
   async function reloadSolutionsAndEvents() {
     const [nextSolutions, nextEvents] = await Promise.all([
@@ -109,9 +108,9 @@ export default function InjuryDetailScreen() {
     }
     addingComment.current = true;
     try {
-      await createComment(db, { injuryId: id, body: commentBody });
-      const next = await listCommentsForInjury(db, id);
-      setComments(next);
+      await createInjuryUpdate(db, { injuryId: id, note: commentBody });
+      const next = await listInjuryUpdatesForInjury(db, id);
+      setUpdates(next);
       setCommentBody('');
       setError(null);
     } catch (caught: unknown) {
@@ -145,9 +144,9 @@ export default function InjuryDetailScreen() {
     }
     addingReading.current = true;
     try {
-      await createSeverityReading(db, { injuryId: id, value: parsedSeverity });
-      const next = await listSeverityReadingsForInjury(db, id);
-      setReadings(next);
+      await createInjuryUpdate(db, { injuryId: id, severity: parsedSeverity });
+      const next = await listInjuryUpdatesForInjury(db, id);
+      setUpdates(next);
       setSeverityText('');
       setError(null);
     } catch (caught: unknown) {
@@ -329,19 +328,19 @@ export default function InjuryDetailScreen() {
             ) : null}
 
             <ThemedText type="smallBold">Severity</ThemedText>
-            {readings.length >= 2 ? (
-              <SeverityTrendChart readings={readings} stroke={theme.text} />
+            {severityUpdates.length >= 2 ? (
+              <SeverityTrendChart points={severityUpdates} stroke={theme.text} />
             ) : null}
-            {readings.length === 0 ? (
+            {severityUpdates.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
                 No severity readings yet.
               </ThemedText>
             ) : (
-              readings.map((reading) => (
-                <ThemedView key={reading.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText>{reading.value} / 10</ThemedText>
+              severityUpdates.map((update) => (
+                <ThemedView key={update.id} type="backgroundElement" style={styles.card}>
+                  <ThemedText>{update.severity} / 10</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(reading.createdAt).toLocaleString()}
+                    {new Date(update.createdAt).toLocaleString()}
                   </ThemedText>
                 </ThemedView>
               ))
@@ -373,11 +372,11 @@ export default function InjuryDetailScreen() {
             ) : null}
 
             <ThemedText type="smallBold">Comments</ThemedText>
-            {comments.map((comment) => (
-              <ThemedView key={comment.id} type="backgroundElement" style={styles.card}>
-                <ThemedText>{comment.body}</ThemedText>
+            {noteUpdates.map((update) => (
+              <ThemedView key={update.id} type="backgroundElement" style={styles.card}>
+                <ThemedText>{update.note}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(comment.createdAt).toLocaleString()}
+                  {new Date(update.createdAt).toLocaleString()}
                 </ThemedText>
               </ThemedView>
             ))}
@@ -439,10 +438,10 @@ function parseSeverityInput(text: string): number | null {
 }
 
 function SeverityTrendChart({
-  readings,
+  points: updates,
   stroke,
 }: {
-  readings: SeverityReading[];
+  points: InjuryUpdate[];
   stroke: string;
 }) {
   const width = 280;
@@ -451,11 +450,12 @@ function SeverityTrendChart({
   const padY = 8;
   const innerW = width - padX * 2;
   const innerH = height - padY * 2;
-  const last = readings.length - 1;
-  const points = readings
-    .map((reading, index) => {
+  const last = updates.length - 1;
+  const points = updates
+    .map((update, index) => {
+      const value = update.severity ?? 0;
       const x = padX + (last === 0 ? innerW / 2 : (index / last) * innerW);
-      const y = padY + innerH - (reading.value / 10) * innerH;
+      const y = padY + innerH - (value / 10) * innerH;
       return `${x},${y}`;
     })
     .join(' ');
@@ -521,9 +521,8 @@ async function loadThread(
   id: number,
 ): Promise<{
   injury: Injury | null;
-  comments: Comment[];
+  updates: InjuryUpdate[];
   solutions: Solution[];
-  readings: SeverityReading[];
   events: InjuryEvent[];
   eventLabels: Record<number, string>;
 }> {
@@ -531,21 +530,19 @@ async function loadThread(
   if (injury == null) {
     return {
       injury: null,
-      comments: [],
+      updates: [],
       solutions: [],
-      readings: [],
       events: [],
       eventLabels: {},
     };
   }
-  const [comments, solutions, readings, events] = await Promise.all([
-    listCommentsForInjury(db, id),
+  const [updates, solutions, events] = await Promise.all([
+    listInjuryUpdatesForInjury(db, id),
     listSolutionsForInjury(db, id),
-    listSeverityReadingsForInjury(db, id),
     listEventsForInjury(db, id),
   ]);
   const eventLabels = await labelsForEvents(db, events);
-  return { injury, comments, solutions, readings, events, eventLabels };
+  return { injury, updates, solutions, events, eventLabels };
 }
 
 function inputColors(theme: { text: string; backgroundElement: string }) {

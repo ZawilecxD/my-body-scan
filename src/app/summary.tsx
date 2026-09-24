@@ -169,9 +169,9 @@ export default function SummaryScreen() {
             onPress={() => updateConfig({ includeSolutions: !config.includeSolutions })}
           />
           <CheckboxRow
-            label="Comments"
-            checked={config.includeComments}
-            onPress={() => updateConfig({ includeComments: !config.includeComments })}
+            label="Notes"
+            checked={config.includeNotes}
+            onPress={() => updateConfig({ includeNotes: !config.includeNotes })}
           />
 
           <Pressable

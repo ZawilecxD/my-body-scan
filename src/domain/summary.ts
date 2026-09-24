@@ -1,4 +1,4 @@
-import type { Comment, Injury, SeverityReading, Solution } from '@/domain/injury';
+import type { Injury, InjuryUpdate, Solution } from '@/domain/injury';
 import {
   formatLandmarkLabel,
   getLandmarkById,
@@ -19,7 +19,7 @@ export type SummaryConfig = {
   includeDescription: boolean;
   includeLatestSeverity: boolean;
   includeSolutions: boolean;
-  includeComments: boolean;
+  includeNotes: boolean;
 };
 
 export const DEFAULT_SUMMARY_CONFIG: SummaryConfig = {
@@ -28,7 +28,7 @@ export const DEFAULT_SUMMARY_CONFIG: SummaryConfig = {
   includeDescription: true,
   includeLatestSeverity: true,
   includeSolutions: false,
-  includeComments: false,
+  includeNotes: false,
 };
 
 export const SUMMARY_WINDOW_PRESETS: readonly SummaryWindowPreset[] = [
@@ -44,9 +44,9 @@ export type SummaryInjurySection = {
   region: Region;
   landmarkLabel: string;
   description: string | null;
-  latestSeverity: SeverityReading | null;
+  latestSeverity: (InjuryUpdate & { severity: number }) | null;
   solutions: Solution[];
-  comments: Comment[];
+  notes: InjuryUpdate[];
 };
 
 export type SummaryDocument = {
@@ -82,14 +82,20 @@ export function injuryOverlapsWindow(injury: Injury, window: SummaryWindow): boo
   return injury.archivedAt >= window.start;
 }
 
-export function commentInWindow(comment: Comment, window: SummaryWindow): boolean {
-  if (comment.createdAt > window.end) {
+export function updateInWindow(createdAt: string, window: SummaryWindow): boolean {
+  if (createdAt > window.end) {
     return false;
   }
   if (window.start == null) {
     return true;
   }
-  return comment.createdAt >= window.start;
+  return createdAt >= window.start;
+}
+
+export function hasSeverity(
+  update: InjuryUpdate,
+): update is InjuryUpdate & { severity: number } {
+  return update.severity != null;
 }
 
 export function windowPresetLabel(preset: SummaryWindowPreset): string {
@@ -210,18 +216,21 @@ export function regionForInjury(injury: Injury): Region {
   return landmark.region;
 }
 
-export function pickLatestSeverity(readings: SeverityReading[]): SeverityReading | null {
-  if (readings.length === 0) {
+export function pickLatestSeverity(
+  updates: InjuryUpdate[],
+): (InjuryUpdate & { severity: number }) | null {
+  const withSeverity = updates.filter(hasSeverity);
+  if (withSeverity.length === 0) {
     return null;
   }
-  let latest = readings[0];
-  for (let index = 1; index < readings.length; index += 1) {
-    const reading = readings[index];
+  let latest = withSeverity[0];
+  for (let index = 1; index < withSeverity.length; index += 1) {
+    const update = withSeverity[index];
     if (
-      reading.createdAt > latest.createdAt ||
-      (reading.createdAt === latest.createdAt && reading.id > latest.id)
+      update.createdAt > latest.createdAt ||
+      (update.createdAt === latest.createdAt && update.id > latest.id)
     ) {
-      latest = reading;
+      latest = update;
     }
   }
   return latest;
@@ -244,7 +253,7 @@ function formatInjuryTextLines(section: SummaryInjurySection): string[] {
   }
   if (section.latestSeverity != null) {
     lines.push(
-      `Severity: ${section.latestSeverity.value} / 10 (${formatTimestamp(section.latestSeverity.createdAt)})`,
+      `Severity: ${section.latestSeverity.severity} / 10 (${formatTimestamp(section.latestSeverity.createdAt)})`,
     );
   }
   if (section.solutions.length > 0) {
@@ -255,10 +264,13 @@ function formatInjuryTextLines(section: SummaryInjurySection): string[] {
       );
     }
   }
-  if (section.comments.length > 0) {
-    lines.push('Comments:');
-    for (const comment of section.comments) {
-      lines.push(`  - ${formatTimestamp(comment.createdAt)}: ${comment.body}`);
+  if (section.notes.length > 0) {
+    lines.push('Notes:');
+    for (const update of section.notes) {
+      if (update.note == null) {
+        continue;
+      }
+      lines.push(`  - ${formatTimestamp(update.createdAt)}: ${update.note}`);
     }
   }
   return lines;
@@ -275,7 +287,7 @@ function formatInjuryHtmlBlocks(section: SummaryInjurySection): string[] {
   }
   if (section.latestSeverity != null) {
     blocks.push(
-      `<p><strong>Severity:</strong> ${section.latestSeverity.value} / 10 (${escapeHtml(formatTimestamp(section.latestSeverity.createdAt))})</p>`,
+      `<p><strong>Severity:</strong> ${section.latestSeverity.severity} / 10 (${escapeHtml(formatTimestamp(section.latestSeverity.createdAt))})</p>`,
     );
   }
   if (section.solutions.length > 0) {
@@ -290,11 +302,14 @@ function formatInjuryHtmlBlocks(section: SummaryInjurySection): string[] {
     }
     blocks.push('</ul>');
   }
-  if (section.comments.length > 0) {
-    blocks.push('<p><strong>Comments:</strong></p><ul>');
-    for (const comment of section.comments) {
+  if (section.notes.length > 0) {
+    blocks.push('<p><strong>Notes:</strong></p><ul>');
+    for (const update of section.notes) {
+      if (update.note == null) {
+        continue;
+      }
       blocks.push(
-        `<li>${escapeHtml(formatTimestamp(comment.createdAt))}: ${escapeHtml(comment.body)}</li>`,
+        `<li>${escapeHtml(formatTimestamp(update.createdAt))}: ${escapeHtml(update.note)}</li>`,
       );
     }
     blocks.push('</ul>');

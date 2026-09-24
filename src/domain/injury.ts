@@ -12,10 +12,11 @@ export type Injury = {
   limb: Limb | null;
 };
 
-export type Comment = {
+export type InjuryUpdate = {
   id: number;
   injuryId: number;
-  body: string;
+  severity: number | null;
+  note: string | null;
   createdAt: string;
 };
 
@@ -40,12 +41,5 @@ export type InjuryEvent = {
   injuryId: number;
   type: InjuryEventType;
   solutionId: number | null;
-  createdAt: string;
-};
-
-export type SeverityReading = {
-  id: number;
-  injuryId: number;
-  value: number;
   createdAt: string;
 };
